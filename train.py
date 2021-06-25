@@ -37,7 +37,7 @@ if __name__ == '__main__':
     wandb.init(project=args.project, config=args)
 
     trainset = MiniImageNet('train')
-    train_sampler = CategoriesSampler(trainset.label, 100,
+    train_sampler = CategoriesSampler(trainset.label, 500,
                                       args.train_way, args.shot + args.query)
     train_loader = DataLoader(dataset=trainset, batch_sampler=train_sampler,
                               num_workers=8, pin_memory=False)
@@ -57,8 +57,9 @@ if __name__ == '__main__':
           model.parameters(),
           args.lr,
           momentum=0.9,
+          nesterov=True,
           weight_decay=5e-4)
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=80, gamma=0.5)
 
     def save_model(name):
         torch.save(model.state_dict(), osp.join(args.save_path, name + '.pth'))
@@ -83,7 +84,7 @@ if __name__ == '__main__':
 
         tl = Averager()
         ta = Averager()
-        with tqdm(train_loader, total=100) as pbar:
+        with tqdm(train_loader, total=500) as pbar:
             for i, batch in enumerate(pbar, 1):
                 data, _ = [_.cuda() for _ in batch]
                 p = args.shot * args.train_way

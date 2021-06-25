@@ -2,7 +2,7 @@ import argparse
 
 import torch
 from torch.utils.data import DataLoader
-
+import torch.nn as nn
 from mini_imagenet import MiniImageNet
 from samplers import CategoriesSampler
 from models.convnet import Convnet
@@ -11,6 +11,7 @@ from utils import pprint, set_gpu, count_acc, Averager, euclidean_metric
 
 class Prototest(nn.Module):
     def __init__(self):
+        super().__init__()
         self.encoder = ResNet_baseline()
 
     def forward(self, x):
