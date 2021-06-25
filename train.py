@@ -24,8 +24,9 @@ if __name__ == '__main__':
     parser.add_argument('--test-way', type=int, default=5)
     parser.add_argument('--save-path', default='./models/proto-1')
     parser.add_argument('--gpu', default='0')
-    parser.add_argument('--model', type='str', options=['Conv64', 'ResNet12'])
-    parser.add_argument('--project', type='str', default='CNNF-Prototype')
+    parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--project', type=str, default='CNNF-Prototype')
     args = parser.parse_args()
     pprint(vars(args))
 
@@ -54,8 +55,8 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(
           model.parameters(),
           args.lr,
-          momentum=args.momentum,
-          weight_decay=args.wd)
+          momentum=0.9,
+          weight_decay=5e-4)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
     def save_model(name):
