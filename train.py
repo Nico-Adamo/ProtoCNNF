@@ -40,13 +40,13 @@ if __name__ == '__main__':
     train_sampler = CategoriesSampler(trainset.label, 100,
                                       args.train_way, args.shot + args.query)
     train_loader = DataLoader(dataset=trainset, batch_sampler=train_sampler,
-                              num_workers=8, pin_memory=True)
+                              num_workers=8, pin_memory=False)
 
     valset = MiniImageNet('val')
     val_sampler = CategoriesSampler(valset.label, 400,
                                     args.test_way, args.shot + args.query)
     val_loader = DataLoader(dataset=valset, batch_sampler=val_sampler,
-                            num_workers=8, pin_memory=True)
+                            num_workers=8, pin_memory=False)
 
     if args.model == "Conv64":
         model = Convnet().cuda()
@@ -98,7 +98,7 @@ if __name__ == '__main__':
                 logits = euclidean_metric(model(data_query), proto)
                 loss = F.cross_entropy(logits, label)
                 acc = count_acc(logits, label)
-                pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc.item()),loss='{0:.4f}'.format(loss.item()))
+                pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
 
                 tl.add(loss.item())
                 ta.add(acc)
