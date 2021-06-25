@@ -14,7 +14,6 @@ from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, eucl
 
 
 if __name__ == '__main__':
-    wandb.init(project=args.project, config=args)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--max-epoch', type=int, default=200)
@@ -32,6 +31,8 @@ if __name__ == '__main__':
 
     set_gpu(args.gpu)
     ensure_path(args.save_path)
+
+    wandb.init(project=args.project, config=args)
 
     trainset = MiniImageNet('train')
     train_sampler = CategoriesSampler(trainset.label, 100,

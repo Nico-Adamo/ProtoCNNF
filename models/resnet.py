@@ -9,7 +9,7 @@ import numpy as np
 import math
 import torchvision
 from torchvision import datasets, transforms
-from cnnf.layers import DropBlock
+from models.layers import DropBlock
 import matplotlib.pyplot as plt
 import pdb
 import shutil
