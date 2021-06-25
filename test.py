@@ -9,6 +9,12 @@ from models.convnet import Convnet
 from models.resnet import ResNet_baseline
 from utils import pprint, set_gpu, count_acc, Averager, euclidean_metric
 
+class Prototest(nn.Module):
+    def __init__(self):
+        self.encoder = ResNet_baseline()
+
+    def forward(self, x):
+        return self.encoder(x)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -29,8 +35,8 @@ if __name__ == '__main__':
     loader = DataLoader(dataset, batch_sampler=sampler,
                         num_workers=8, pin_memory=False)
 
-    model = ResNet_baseline().cuda()
-    model.load_state_dict(torch.load(args.load))
+    model = Prototest().cuda()
+    model.load_state_dict(torch.load(args.load)['params'])
     model.eval()
 
     ave_acc = Averager()
