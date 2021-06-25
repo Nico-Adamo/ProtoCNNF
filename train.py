@@ -11,6 +11,7 @@ from samplers import CategoriesSampler
 from models.convnet import Convnet
 from models.resnet import ResNet_baseline
 from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric
+from tqdm import tqdm
 
 
 if __name__ == '__main__':
@@ -75,87 +76,87 @@ if __name__ == '__main__':
     wandb.watch(model, log_freq=10)
 
     for epoch in range(1, args.max_epoch + 1):
+        print("Epoch " + str(epoch))
         lr_scheduler.step()
 
         model.train()
 
         tl = Averager()
         ta = Averager()
+        with tqdm(train_loader, total=100) as pbar:
+            for i, batch in enumerate(pbar, 1):
+                data, _ = [_.cuda() for _ in batch]
+                p = args.shot * args.train_way
+                data_shot, data_query = data[:p], data[p:]
 
-        for i, batch in enumerate(train_loader, 1):
-            data, _ = [_.cuda() for _ in batch]
-            p = args.shot * args.train_way
-            data_shot, data_query = data[:p], data[p:]
+                proto = model(data_shot)
+                proto = proto.reshape(args.shot, args.train_way, -1).mean(dim=0)
 
-            proto = model(data_shot)
-            proto = proto.reshape(args.shot, args.train_way, -1).mean(dim=0)
+                label = torch.arange(args.train_way).repeat(args.query)
+                label = label.type(torch.cuda.LongTensor)
 
-            label = torch.arange(args.train_way).repeat(args.query)
-            label = label.type(torch.cuda.LongTensor)
+                logits = euclidean_metric(model(data_query), proto)
+                loss = F.cross_entropy(logits, label)
+                acc = count_acc(logits, label)
+                pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc.item()),loss='{0:.4f}'.format(loss.item()))
 
-            logits = euclidean_metric(model(data_query), proto)
-            loss = F.cross_entropy(logits, label)
-            acc = count_acc(logits, label)
-            print('Epoch {}, train {}/{}, loss={:.4f} acc={:.4f}'
-                  .format(epoch, i, len(train_loader), loss.item(), acc))
+                tl.add(loss.item())
+                ta.add(acc)
 
-            tl.add(loss.item())
-            ta.add(acc)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                proto = None; logits = None; loss = None
 
-            proto = None; logits = None; loss = None
+            tl = tl.item()
+            ta = ta.item()
 
-        tl = tl.item()
-        ta = ta.item()
+            model.eval()
 
-        model.eval()
+            vl = Averager()
+            va = Averager()
 
-        vl = Averager()
-        va = Averager()
+            for i, batch in enumerate(val_loader, 1):
+                data, _ = [_.cuda() for _ in batch]
+                p = args.shot * args.test_way
+                data_shot, data_query = data[:p], data[p:]
 
-        for i, batch in enumerate(val_loader, 1):
-            data, _ = [_.cuda() for _ in batch]
-            p = args.shot * args.test_way
-            data_shot, data_query = data[:p], data[p:]
+                proto = model(data_shot)
+                proto = proto.reshape(args.shot, args.test_way, -1).mean(dim=0)
 
-            proto = model(data_shot)
-            proto = proto.reshape(args.shot, args.test_way, -1).mean(dim=0)
+                label = torch.arange(args.test_way).repeat(args.query)
+                label = label.type(torch.cuda.LongTensor)
 
-            label = torch.arange(args.test_way).repeat(args.query)
-            label = label.type(torch.cuda.LongTensor)
+                logits = euclidean_metric(model(data_query), proto)
+                loss = F.cross_entropy(logits, label)
+                acc = count_acc(logits, label)
 
-            logits = euclidean_metric(model(data_query), proto)
-            loss = F.cross_entropy(logits, label)
-            acc = count_acc(logits, label)
+                vl.add(loss.item())
+                va.add(acc)
 
-            vl.add(loss.item())
-            va.add(acc)
+                proto = None; logits = None; loss = None
 
-            proto = None; logits = None; loss = None
+            vl = vl.item()
+            va = va.item()
+            print('Epoch {}, val, loss={:.4f} acc={:.4f}'.format(epoch, vl, va))
+            wandb.log({"train_loss": tl, "train_acc": ta, "test_loss": vl, "test_acc": va})
 
-        vl = vl.item()
-        va = va.item()
-        print('Epoch {}, val, loss={:.4f} acc={:.4f}'.format(epoch, vl, va))
-        wandb.log({"train_loss": loss.item(), "train_acc": acc, "test_loss": vl, "test_acc": va})
+            if va > trlog['max_acc']:
+                trlog['max_acc'] = va
+                save_model('max-acc')
 
-        if va > trlog['max_acc']:
-            trlog['max_acc'] = va
-            save_model('max-acc')
+            trlog['train_loss'].append(tl)
+            trlog['train_acc'].append(ta)
+            trlog['val_loss'].append(vl)
+            trlog['val_acc'].append(va)
 
-        trlog['train_loss'].append(tl)
-        trlog['train_acc'].append(ta)
-        trlog['val_loss'].append(vl)
-        trlog['val_acc'].append(va)
+            torch.save(trlog, osp.join(args.save_path, 'trlog'))
 
-        torch.save(trlog, osp.join(args.save_path, 'trlog'))
+            save_model('epoch-last')
 
-        save_model('epoch-last')
+            if epoch % args.save_epoch == 0:
+                save_model('epoch-{}'.format(epoch))
 
-        if epoch % args.save_epoch == 0:
-            save_model('epoch-{}'.format(epoch))
-
-        print('ETA:{}/{}'.format(timer.measure(), timer.measure(epoch / args.max_epoch)))
+            print('ETA:{}/{}'.format(timer.measure(), timer.measure(epoch / args.max_epoch)))
 
