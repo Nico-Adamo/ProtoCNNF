@@ -17,7 +17,7 @@ from tqdm import tqdm
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--max-epoch', type=int, default=200)
+    parser.add_argument('--max-epoch', type=int, default=300)
     parser.add_argument('--save-epoch', type=int, default=20)
     parser.add_argument('--shot', type=int, default=1)
     parser.add_argument('--query', type=int, default=15)
@@ -26,6 +26,9 @@ if __name__ == '__main__':
     parser.add_argument('--save-path', default='./models/proto-1')
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
+    parser.add_argument('--schedule', type=str, choices=['step', 'poly'], default='step')
+    parser.add_argument('--step_size', type=int, default=40)
+    parser.add_argument('--gamma', type=float, default=0.2)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--project', type=str, default='CNNF-Prototype')
     args = parser.parse_args()

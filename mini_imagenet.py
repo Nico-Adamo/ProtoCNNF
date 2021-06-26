@@ -10,7 +10,7 @@ IMAGE_PATH = '/mnt/miniimagenet/'
 
 class MiniImageNet(Dataset):
 
-    def __init__(self, setname):
+    def __init__(self, setname, augment=False):
         csv_path = osp.join(ROOT_PATH, setname + '.csv')
         lines = [x.strip() for x in open(csv_path, 'r').readlines()][1:]
 
@@ -32,13 +32,22 @@ class MiniImageNet(Dataset):
         self.data = data
         self.label = label
 
-        self.transform = transforms.Compose([
-            transforms.Resize(84),
-            transforms.CenterCrop(84),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
-        ])
+        if augment and setname == 'train':
+            transforms_list = [
+                  transforms.RandomResizedCrop(84),
+                  transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+                  transforms.RandomHorizontalFlip(),
+                  transforms.ToTensor(),
+                ]
+        else:
+            self.transform = transforms.Compose([
+                transforms.Resize(84),
+                transforms.CenterCrop(84),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                    std=[0.229, 0.224, 0.225])
+            ])
+
 
     def __len__(self):
         return len(self.data)
