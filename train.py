@@ -26,8 +26,9 @@ if __name__ == '__main__':
     parser.add_argument('--save-path', default='./models/proto-1')
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
-    parser.add_argument('--schedule', type=str, choices=['step', 'poly'], default='step')
-    parser.add_argument('--step_size', type=int, default=40)
+    parser.add_argument('--schedule', type=str, choices=['step'], default='step')
+    parser.add_argument('--step_size', type=int, default=30)
+    parser.add_argument('--drop_rate', type=float, default=0.1)
     parser.add_argument('--gamma', type=float, default=0.2)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--project', type=str, default='CNNF-Prototype')
@@ -54,7 +55,7 @@ if __name__ == '__main__':
     if args.model == "Conv64":
         model = Convnet().cuda()
     else:
-        model = ResNet_baseline().cuda()
+        model = ResNet_baseline(drop_rate=args.drop_rate).cuda()
 
     optimizer = torch.optim.SGD(
           model.parameters(),
@@ -62,7 +63,9 @@ if __name__ == '__main__':
           momentum=0.9,
           nesterov=True,
           weight_decay=5e-4)
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=80, gamma=0.5)
+
+    if args.schedule == 'step':
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
 
     def save_model(name):
         torch.save(model.state_dict(), osp.join(args.save_path, name + '.pth'))

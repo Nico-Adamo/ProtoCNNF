@@ -9,7 +9,7 @@ import wandb
 from mini_imagenet import MiniImageNet
 from samplers import CategoriesSampler
 from models.convnet import Convnet
-from models.resnet import resnet12
+from models.resnet import ResNet_baseline
 from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric
 from tqdm import tqdm
 from models.classifier import Classifier
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     if args.model == "Conv64":
         model = Classifier(Convnet()).cuda()
     else:
-        model = Classifier(resnet12()).cuda()
+        model = Classifier(ResNet_baseline()).cuda()
     initial_lr = args.lr
     optimizer = torch.optim.SGD(
           model.parameters(),
@@ -111,7 +111,7 @@ if __name__ == '__main__':
             ta = ta.item()
 
 
-            if epoch > 100 or (epoch-1) % 5 == 0:
+            if epoch > 20 or (epoch-1) % 5 == 0:
                 model.eval()
 
                 vl = Averager()
