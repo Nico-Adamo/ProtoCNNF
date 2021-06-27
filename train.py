@@ -48,7 +48,7 @@ if __name__ == '__main__':
                               num_workers=8, pin_memory=False)
 
     valset = MiniImageNet('val')
-    val_sampler = CategoriesSampler(valset.label, 400,
+    val_sampler = CategoriesSampler(valset.label, 200,
                                     args.test_way, args.shot + args.query)
     val_loader = DataLoader(dataset=valset, batch_sampler=val_sampler,
                             num_workers=8, pin_memory=False)
