@@ -50,9 +50,9 @@ if __name__ == '__main__':
                             num_workers=8, pin_memory=False)
 
     if args.model == "Conv64":
-        model = Classifier(Convnet()).cuda()
+        model = Classifier(Convnet(), args).cuda()
     else:
-        model = Classifier(ResNet_baseline()).cuda()
+        model = Classifier(ResNet_baseline(), args).cuda()
     initial_lr = args.lr
     optimizer = torch.optim.SGD(
           model.parameters(),

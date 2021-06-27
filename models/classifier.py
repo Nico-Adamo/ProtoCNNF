@@ -19,9 +19,8 @@ class Classifier(nn.Module):
         super().__init__()
         self.args = args
 
-        if(args.dataset == 'miniimagenet'):
-            self.num_classes = 100
-        if(args.model == 'wrn'):
+        self.num_classes = 100
+        if(args.model == 'ResNet12'):
             self.hdim = 640
         self.encoder = encoder
         self.fc = nn.Linear(self.hdim, self.num_classes)
