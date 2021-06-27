@@ -23,9 +23,9 @@ if __name__ == '__main__':
     parser.add_argument('--save-path', default='./models-backbone/net-1')
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
-    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--lr', type=float, default=0.05)
     parser.add_argument('--project', type=str, default='CNNF-Prototype-Pretrain')
-    parser.add_argument('--schedule', type=int, nargs='+', default=[15, 30, 60])
+    parser.add_argument('--step_size', type=int, default=30)
     parser.add_argument('--gamma', type=float, default=0.1)
 
     args = parser.parse_args()
@@ -57,6 +57,7 @@ if __name__ == '__main__':
           momentum=0.9,
           nesterov=True,
           weight_decay=5e-4)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
 
     def save_model(name):
         torch.save(model.state_dict(), osp.join(args.save_path, name + '.pth'))
@@ -75,10 +76,7 @@ if __name__ == '__main__':
 
     for epoch in range(1, args.max_epoch + 1):
         print("Epoch " + str(epoch))
-        if epoch in args.schedule:
-            initial_lr *= args.gamma
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = initial_lr
+        lr_scheduler.step()
 
         model.train()
 

@@ -27,8 +27,8 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
     parser.add_argument('--schedule', type=str, choices=['step'], default='step')
-    parser.add_argument('--step_size', type=int, default=30)
-    parser.add_argument('--drop_rate', type=float, default=0.1)
+    parser.add_argument('--step-size', type=int, default=30)
+    parser.add_argument('--drop-rate', type=float, default=0.1)
     parser.add_argument('--gamma', type=float, default=0.2)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--project', type=str, default='CNNF-Prototype')
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         checkpoint = torch.load(args.restore_from)
         classifier = Classifier(ResNet_baseline(), args)
         classifier.load_state_dict(checkpoint)
-        model = classifier.encoder
+        model = classifier.encoder.cuda()
     else:
         if args.model == "Conv64":
             model = Convnet().cuda()
