@@ -19,10 +19,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--max-epoch', type=int, default=100)
     parser.add_argument('--save-epoch', type=int, default=20)
-    parser.add_argument('--shot', type=int, default=1)
     parser.add_argument('--query', type=int, default=15)
-    parser.add_argument('--train-way', type=int, default=30)
-    parser.add_argument('--test-way', type=int, default=5)
     parser.add_argument('--save-path', default='./models-backbone/net-1')
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
@@ -40,7 +37,7 @@ if __name__ == '__main__':
     wandb.init(project=args.project, config=args)
 
     trainset = MiniImageNet('train', augment=True)
-    train_loader = DataLoader(dataset=trainset, batch_size = 1, shuffle=True,
+    train_loader = DataLoader(dataset=trainset, batch_size = 16, shuffle=True,
                               num_workers=8, pin_memory=False)
 
     valset = MiniImageNet('val')
@@ -120,16 +117,15 @@ if __name__ == '__main__':
                     # Test few shot performance
                     for i, batch in enumerate(val_loader, 1):
                         data, _ = [_.cuda() for _ in batch]
-                        p = args.shot * args.test_way
-                        data_shot, data_query = data[:p], data[p:]
+                        data_shot, data_query = data[:valset.num_class], data[valset.num_class:]
 
-                        proto = model(data_shot)
-                        proto = proto.reshape(args.shot, args.test_way, -1).mean(dim=0)
+                        proto = model.forward_proto(data_shot)
+                        proto = proto.reshape(1, args.query+1, -1).mean(dim=0)
 
-                        label = torch.arange(args.test_way).repeat(args.query)
+                        label = torch.arange(valset.num_class).repeat(args.query)
                         label = label.type(torch.cuda.LongTensor)
 
-                        logits = euclidean_metric(model(data_query), proto)
+                        logits = euclidean_metric(model.forward_proto(data_query), proto)
                         loss = F.cross_entropy(logits, label)
                         acc = count_acc(logits, label)
 
@@ -141,8 +137,7 @@ if __name__ == '__main__':
                     vl = vl.item()
                     va = va.item()
                 print('Epoch {}, few-shot val, loss={:.4f} acc={:.4f}'.format(epoch, vl, va))
-                wandb.log({"train_loss": tl, "train_acc": ta, "test_loss": vl, "test_acc": va})
-
+                wandb.log({"test_loss": vl, "test_acc": va})
                 if va > trlog['max_acc']:
                     trlog['max_acc'] = va
                     save_model('max-acc')
@@ -159,5 +154,6 @@ if __name__ == '__main__':
                 if epoch % args.save_epoch == 0:
                     save_model('epoch-{}'.format(epoch))
 
+            wandb.log({"train_loss": tl, "train_acc": ta})
             print('ETA:{}/{}'.format(timer.measure(), timer.measure(epoch / args.max_epoch)))
 
