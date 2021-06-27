@@ -8,11 +8,19 @@ import wandb
 
 from mini_imagenet import MiniImageNet
 from samplers import CategoriesSampler
+from models.classifier import Classifier
 from models.convnet import Convnet
 from models.resnet import ResNet_baseline
 from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric
 from tqdm import tqdm
 
+class WrappedModel(nn.Module):
+    def __init__(self, encoder):
+        super().__init__()
+        self.encoder = encoder
+
+    def forward(self, x):
+        return self.encoder(x)
 
 if __name__ == '__main__':
 
@@ -32,6 +40,7 @@ if __name__ == '__main__':
     parser.add_argument('--gamma', type=float, default=0.2)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--project', type=str, default='CNNF-Prototype')
+    parser.add_arugment('--restore-from', type=str, default="")
     args = parser.parse_args()
     pprint(vars(args))
 
@@ -51,11 +60,15 @@ if __name__ == '__main__':
                                     args.test_way, args.shot + args.query)
     val_loader = DataLoader(dataset=valset, batch_sampler=val_sampler,
                             num_workers=8, pin_memory=False)
-
-    if args.model == "Conv64":
-        model = Convnet().cuda()
+    if args.restore_from != "":
+        print("Restoring from {}".format(args.restore_from))
+        checkpoint = torch.load(args.restore_from)
+        model = Classifier(ResNet_baseline(), args).load_state_dict(checkpoint).encoder
     else:
-        model = ResNet_baseline(drop_rate=args.drop_rate).cuda()
+        if args.model == "Conv64":
+            model = Convnet().cuda()
+        else:
+            model = ResNet_baseline().cuda()
 
     optimizer = torch.optim.SGD(
           model.parameters(),
