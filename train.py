@@ -55,7 +55,8 @@ if __name__ == '__main__':
     if args.restore_from != "":
         print("Restoring from {}".format(args.restore_from))
         checkpoint = torch.load(args.restore_from)
-        classifier = Classifier(ResNet_baseline(), args).load_state_dict(checkpoint)
+        classifier = Classifier(ResNet_baseline(), args)
+        classifier.load_state_dict(checkpoint)
         model = classifier.encoder
     else:
         if args.model == "Conv64":
