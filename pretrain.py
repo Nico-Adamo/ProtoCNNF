@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
         tl = Averager()
         ta = Averager()
-        with tqdm(train_loader, total=500) as pbar:
+        with tqdm(train_loader, total=2400) as pbar:
             for i, batch in enumerate(pbar, 1):
                 data, label = [_.cuda() for _ in batch]
                 label = label.type(torch.cuda.LongTensor)
@@ -137,7 +137,7 @@ if __name__ == '__main__':
                     vl = vl.item()
                     va = va.item()
                 print('Epoch {}, few-shot val, loss={:.4f} acc={:.4f}'.format(epoch, vl, va))
-                wandb.log({"test_loss": vl, "test_acc": va})
+                wandb.log({"test_loss": vl, "test_acc": va}, step=epoch)
                 if va > trlog['max_acc']:
                     trlog['max_acc'] = va
                     save_model('max-acc')
@@ -154,6 +154,6 @@ if __name__ == '__main__':
                 if epoch % args.save_epoch == 0:
                     save_model('epoch-{}'.format(epoch))
 
-            wandb.log({"train_loss": tl, "train_acc": ta})
+            wandb.log({"train_loss": tl, "train_acc": ta}, step=epoch)
             print('ETA:{}/{}'.format(timer.measure(), timer.measure(epoch / args.max_epoch)))
 
