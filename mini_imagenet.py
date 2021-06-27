@@ -31,6 +31,7 @@ class MiniImageNet(Dataset):
 
         self.data = data
         self.label = label
+        self.num_class = len(set(self.label))
 
         if augment and setname == 'train':
             transforms_list = [
