@@ -10,8 +10,8 @@ python3 pretrain.py --max-epoch 100 \
                  --save-path "models-backbone-feedback/proto-1" \
                  --gpu 0 \
                  --model "ResNet12" \
-                 --project "CNNF-Prototype-Pretrain"
+                 --project "CNNF-Prototype-Pretrain" \
                  --ind-block 0 \
-                 --cycles 0 \
+                 --cycles 0
 wait
 echo "All done"

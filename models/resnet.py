@@ -196,7 +196,7 @@ class ResNet(nn.Module):
         self.ind_layer = ind_layer
         self.ind_block = ind_block
         self.res_param = res_param
-        self.cycles = 0
+        self.cycles = cycles
 
     def _make_layer(self, block, planes, stride=1, drop_rate=0.0, drop_block=False, block_size=1):
 

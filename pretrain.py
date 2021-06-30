@@ -28,7 +28,7 @@ if __name__ == '__main__':
     parser.add_argument('--step-size', type=int, default=30)
     parser.add_argument('--gamma', type=float, default=0.1)
 
-    parser.add_argument('--ind_block', type=int, default=1)
+    parser.add_argument('--ind-block', type=int, default=1)
     parser.add_argument('--cycles', type=int, default = 2)
 
     args = parser.parse_args()
@@ -90,6 +90,7 @@ if __name__ == '__main__':
                 data, label = [_.cuda() for _ in batch]
                 label = label.type(torch.cuda.LongTensor)
 
+                model.encoder.reset()
                 logits = model(data)
 
                 loss = F.cross_entropy(logits, label)
