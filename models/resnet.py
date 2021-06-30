@@ -9,8 +9,8 @@ import numpy as np
 import math
 import torchvision
 from torchvision import datasets, transforms
-from layers import DropBlock
-import layers_relax as layers
+from models.layers import DropBlock
+import models.layers_relax as layers
 import matplotlib.pyplot as plt
 import pdb
 import shutil
