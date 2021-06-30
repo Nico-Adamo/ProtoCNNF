@@ -51,11 +51,10 @@ class GroupNorm(nn.Module):
         self.group_norm = nn.GroupNorm(num_groups, num_features, **kwargs)
         self.group_norm_t = nn.GroupNorm(num_groups, num_features, **kwargs)
 
-#         if self.group_norm.affine==True:
-#             self.group_norm.weight.data.fill_(1)
-#             self.group_norm.bias.data.zero_()
-#             self.group_norm_t.weight.data.fill_(1)
-#             self.group_norm_t.bias.data.zero_()
+        # self.group_norm.weight.data.fill_(1)
+        # self.group_norm.bias.data.zero_()
+        # self.group_norm_t.weight.data.fill_(1)
+        # self.group_norm_t.bias.data.zero_()
 
     def forward(self, x, step='forward'):
         if 'forward' in step:
@@ -118,8 +117,8 @@ class Conv2d(nn.Module):
 
 
         n = self.conv.kernel_size[0] * self.conv.kernel_size[1] * self.conv.out_channels
-        nn.init.kaiming_normal_(self.conv.weight, mode='fan_out', nonlinearity='relu')
-        nn.init.kaiming_normal_(self.conv_t.weight, mode='fan_out', nonlinearity='relu')
+        nn.init.kaiming_normal_(self.conv.weight, mode='fan_out', nonlinearity='leaky_relu')
+        nn.init.kaiming_normal_(self.conv_t.weight, mode='fan_out', nonlinearity='leaky_relu')
 
     def forward(self, x, step='forward'):
         if 'forward' in step:
@@ -176,7 +175,7 @@ class ReLU(nn.Module):
             else:
                 self.state = (x * self.hidden) > 0
             state = self.state.float()
-            state[state == 0] = 0.3
+            # state[state == 0] = 0.1
             result = x * state
 
             return result
@@ -185,7 +184,7 @@ class ReLU(nn.Module):
             # Units that were activated in the forward step are passed through
             self.hidden = x
             state = self.state.float()
-            state[state == 0] = 0.3
+            # state[state == 0] = 0.3
             masked_hidden = x * state
             if unit_space is not None:
                 return masked_hidden, unit_space
@@ -338,7 +337,6 @@ class Bias(nn.Module):
     def path_norm_loss(self, unit_space):
         return torch.mean((self.x * self.bias - unit_space * self.bias)**2)
 
-
 class Dropout(nn.Module):
     """
     Performs dropout regularization to the input. In the feedback step, the
@@ -351,7 +349,7 @@ class Dropout(nn.Module):
     def forward(self, x, step='forward', training=False):
         if 'forward' in step:
             if training:
-                self.dropout = (torch.rand_like(x) > self.p).float() / self.p
+                self.dropout = (torch.rand_like(x) > self.p).float() / (1-self.p)
                 return x * self.dropout
             else:
                 return x

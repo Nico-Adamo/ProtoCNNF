@@ -9,8 +9,8 @@ import numpy as np
 import math
 import torchvision
 from torchvision import datasets, transforms
-from models.layers import DropBlock
-import models.layers_relax as layers
+from layers import DropBlock
+import layers_relax as layers
 import matplotlib.pyplot as plt
 import pdb
 import shutil
@@ -18,8 +18,11 @@ import sys
 
 def res_conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
-    return layers.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+    return layers.Conv2d(in_planes, out_planes, 3, bias=False, stride=stride,
+                     padding=1)
+
+def mean(tensor):
+    print("Mean: " + str(tensor.view(tensor.size(0),-1).mean()))
 
 class BasicBlock(nn.Module):
     """Basic ResNet block."""
@@ -46,6 +49,7 @@ class BasicBlock(nn.Module):
             padding=0,
             bias=False) or None
         self.drop_rate = drop_rate
+        self.num_batches_tracked = 0
         self.dropout = layers.Dropout(p = drop_rate)
         self.drop_block = drop_block
         self.block_size = block_size
@@ -54,6 +58,7 @@ class BasicBlock(nn.Module):
     def forward(self, x, step='forward'):
         if ('forward' in step):
             residual = x
+            self.num_batches_tracked += 1
             out = self.conv1(x)
             out = self.ln1(out)
             out = self.relu1(out)
@@ -79,6 +84,7 @@ class BasicBlock(nn.Module):
                     out = self.DropBlock(out, gamma=gamma)
                 else:
                     out = self.dropout(out, training=self.training)
+
             return out
 
         elif ('backward' in step):
@@ -172,7 +178,7 @@ class NetworkBlock(nn.Module):
                   drop_rate, drop_block=False, block_size = 1):
         layers = []
         layers.append(
-              block(in_planes, planes, stride, drop_rate, self.res_param))
+              block(in_planes, planes, stride, drop_rate, drop_block, block_size, self.res_param))
         return nn.Sequential(*layers)
 
 class ResNet(nn.Module):
@@ -280,6 +286,7 @@ class ResNet(nn.Module):
             BasicBlock.relu3.reset()
 
     def forward_cycles(self, x):
+        self.reset()
         proto, orig_feature = self.forward(x, first=True, inter=True)
         ff_prev = orig_feature
 
@@ -287,17 +294,22 @@ class ResNet(nn.Module):
             # feedback
             recon = model(proto, step='backward')
             # feedforward
-            ff_current = ff_prev + self.res_parameter * (recon - ff_prev)
+            ff_current = ff_prev + self.res_param * (recon - ff_prev)
             proto = model(ff_current, first=False)
             ff_prev = ff_current
 
         return proto
 
 if __name__ == "__main__":
-    print(sys.path)
-    model = ResNet(ind_block = 2, cycles = 2)
-    model.reset()
-    rand_img_batch = torch.randn(3,3,84,84)
+    model = ResNet(ind_block = 0, cycles = 0).cuda()
+    rand_img_batch = torch.randn(3,3,84,84).cuda()
     proto = model.forward_cycles(rand_img_batch)
+    label = torch.arange(1).repeat(3)
+    label = label.type(torch.cuda.LongTensor)
 
+    loss = F.cross_entropy(proto, label)
+
+    print(loss)
     print(proto.size())
+    print(proto[1].mean(dim=0))
+
