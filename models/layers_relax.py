@@ -175,14 +175,18 @@ class ReLU(nn.Module):
                 self.state = (x > 0)
             else:
                 self.state = (x * self.hidden) > 0
-            result = x * self.state.float()
+            state = self.state.float()
+            state[state == 0] = 0.3
+            result = x * state
 
             return result
 
         elif 'backward' in step:
             # Units that were activated in the forward step are passed through
             self.hidden = x
-            masked_hidden = x * self.state.float()
+            state = self.state.float()
+            state[state == 0] = 0.3
+            masked_hidden = x * state
             if unit_space is not None:
                 return masked_hidden, unit_space
             else:
