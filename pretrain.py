@@ -52,7 +52,7 @@ if __name__ == '__main__':
     if args.model == "Conv64":
         model = Classifier(Convnet(), args).cuda()
     else:
-        model = Classifier(ResNet(ind_block = args.ind_block, cycles = args.cycles).cuda(), args).cuda()
+        model = Classifier(ResNet(ind_block = args.ind_block, cycles = args.cycles), args).cuda()
     initial_lr = args.lr
     optimizer = torch.optim.SGD(
           model.parameters(),
@@ -103,6 +103,7 @@ if __name__ == '__main__':
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
 
                 proto = None; logits = None; loss = None
 

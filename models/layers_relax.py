@@ -118,8 +118,8 @@ class Conv2d(nn.Module):
 
 
         n = self.conv.kernel_size[0] * self.conv.kernel_size[1] * self.conv.out_channels
-        self.conv.weight.data.normal_(0, math.sqrt(2. / n))  # He initialization
-        self.conv_t.weight.data.normal_(0, math.sqrt(2. / n))  # He initialization
+        nn.init.kaiming_normal_(self.conv.weight, mode='fan_out', nonlinearity='relu')
+        nn.init.kaiming_normal_(self.conv_t.weight, mode='fan_out', nonlinearity='relu')
 
     def forward(self, x, step='forward'):
         if 'forward' in step:
