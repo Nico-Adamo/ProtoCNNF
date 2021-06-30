@@ -235,10 +235,10 @@ class resReLU(nn.Module):
 
 class AvgPool2d(nn.Module):
 
-    def __init__(self, kernel_size, scale_factor=10, **kwargs):
+    def __init__(self, kernel_size, scale_factor=10, stride = 1, **kwargs):
         super().__init__()
 
-        self.avgpool = nn.AvgPool2d(kernel_size, **kwargs)
+        self.avgpool = nn.AvgPool2d(kernel_size, stride = stride, **kwargs)
         self.upsample = nn.UpsamplingNearest2d(scale_factor=scale_factor, **kwargs)  # feedforward, before avgpool, size is 10
 
     def forward(self, x, step='forward'):

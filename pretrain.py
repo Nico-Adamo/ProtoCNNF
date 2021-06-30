@@ -9,7 +9,7 @@ import wandb
 from mini_imagenet import MiniImageNet
 from samplers import CategoriesSampler
 from models.convnet import Convnet
-from models.resnet import ResNet_baseline
+from models.resnet import ResNet
 from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric
 from tqdm import tqdm
 from models.classifier import Classifier
@@ -25,8 +25,11 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--project', type=str, default='CNNF-Prototype-Pretrain')
-    parser.add_argument('--step_size', type=int, default=30)
+    parser.add_argument('--step-size', type=int, default=30)
     parser.add_argument('--gamma', type=float, default=0.1)
+
+    parser.add_argument('--ind_block', type=int, default=1)
+    parser.add_argument('--cycles', type=int, default = 2)
 
     args = parser.parse_args()
     pprint(vars(args))
@@ -49,7 +52,7 @@ if __name__ == '__main__':
     if args.model == "Conv64":
         model = Classifier(Convnet(), args).cuda()
     else:
-        model = Classifier(ResNet_baseline(), args).cuda()
+        model = Classifier(ResNet(ind_block = args.ind_block, cycles = args.cycles).cuda(), args).cuda()
     initial_lr = args.lr
     optimizer = torch.optim.SGD(
           model.parameters(),

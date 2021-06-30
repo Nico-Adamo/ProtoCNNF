@@ -62,7 +62,7 @@ if __name__ == '__main__':
         if args.model == "Conv64":
             model = Convnet().cuda()
         else:
-            model = ResNet().cuda()
+            model = ResNet(ind_block = args.ind_block).cuda()
 
     optimizer = torch.optim.SGD(
           model.parameters(),
@@ -108,10 +108,10 @@ if __name__ == '__main__':
 
                 for i_cycle in range(args.cycles):
                     # feedback
-                    recon = model(logits, step='backward')
+                    recon = model(proto, step='backward')
                     # feedforward
                     ff_current = ff_prev + args.res_parameter * (recon - ff_prev)
-                    logits = model(ff_current, first=False)
+                    proto = model(ff_current, first=False)
                     ff_prev = ff_current
 
                 proto = proto.reshape(args.shot, args.train_way, -1).mean(dim=0)

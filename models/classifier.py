@@ -26,10 +26,10 @@ class Classifier(nn.Module):
         self.fc = nn.Linear(self.hdim, self.num_classes)
 
     def forward(self, x, **kwargs):
-        out = self.encoder(x, **kwargs)
+        out = self.encoder.forward_cycles(x, **kwargs)
         out = self.fc(out)
         return out
 
     def forward_proto(self, x, **kwargs):
-        out = self.encoder(x, **kwargs)
+        out = self.encoder.forward_cycles(x, **kwargs)
         return out
