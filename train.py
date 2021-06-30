@@ -10,7 +10,7 @@ from mini_imagenet import MiniImageNet
 from samplers import CategoriesSampler
 from models.classifier import Classifier
 from models.convnet import Convnet
-from models.resnet import ResNet_baseline
+from models.resnet import ResNet
 from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric
 from tqdm import tqdm
 
@@ -55,14 +55,14 @@ if __name__ == '__main__':
     if args.restore_from != "":
         print("Restoring from {}".format(args.restore_from))
         checkpoint = torch.load(args.restore_from)
-        classifier = Classifier(ResNet_baseline(), args)
+        classifier = Classifier(ResNet(), args)
         classifier.load_state_dict(checkpoint)
         model = classifier.encoder.cuda()
     else:
         if args.model == "Conv64":
             model = Convnet().cuda()
         else:
-            model = ResNet_baseline().cuda()
+            model = ResNet().cuda()
 
     optimizer = torch.optim.SGD(
           model.parameters(),
@@ -103,7 +103,17 @@ if __name__ == '__main__':
                 p = args.shot * args.train_way
                 data_shot, data_query = data[:p], data[p:]
 
-                proto = model(data_shot)
+                proto, orig_feature = model(data_shot, first=True)
+                ff_prev = orig_feature
+
+                for i_cycle in range(args.cycles):
+                    # feedback
+                    recon = model(logits, step='backward')
+                    # feedforward
+                    ff_current = ff_prev + args.res_parameter * (recon - ff_prev)
+                    logits = model(ff_current, first=False)
+                    ff_prev = ff_current
+
                 proto = proto.reshape(args.shot, args.train_way, -1).mean(dim=0)
 
                 label = torch.arange(args.train_way).repeat(args.query)

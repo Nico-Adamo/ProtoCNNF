@@ -12,22 +12,29 @@ class DropBlock(nn.Module):
 
         self.block_size = block_size
 
-    def forward(self, x, gamma):
+    def forward(self, x, gamma, step='forward'):
         # shape: (bsize, channels, height, width)
+        if 'forward' in step:
+            if self.training:
+                batch_size, channels, height, width = x.shape
+                bernoulli = Bernoulli(gamma)
+                mask = bernoulli.sample((batch_size, channels, height - (self.block_size - 1), width - (self.block_size - 1)))
+                if torch.cuda.is_available():
+                    mask = mask.cuda()
+                self.block_mask = self._compute_block_mask(mask)
+                countM = self.block_mask.size()[0] * self.block_mask.size()[1] * self.block_mask.size()[2] * self.block_mask.size()[3]
+                count_ones = self.block_mask.sum()
 
-        if self.training:
-            batch_size, channels, height, width = x.shape
-            bernoulli = Bernoulli(gamma)
-            mask = bernoulli.sample((batch_size, channels, height - (self.block_size - 1), width - (self.block_size - 1)))
-            if torch.cuda.is_available():
-                mask = mask.cuda()
-            block_mask = self._compute_block_mask(mask)
-            countM = block_mask.size()[0] * block_mask.size()[1] * block_mask.size()[2] * block_mask.size()[3]
-            count_ones = block_mask.sum()
-
-            return block_mask * x * (countM / count_ones)
+                return self.block_mask * x * (countM / count_ones)
+            else:
+                return x
         else:
-            return x
+            if self.training:
+                countM = self.block_mask.size()[0] * self.block_mask.size()[1] * self.block_mask.size()[2] * self.block_mask.size()[3]
+                count_ones = self.block_mask.sum()
+                return self.block_mask * x * (countM / count_ones)
+            else:
+                return x
 
     def _compute_block_mask(self, mask):
         left_padding = int((self.block_size-1) / 2)

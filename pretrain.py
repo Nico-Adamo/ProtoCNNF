@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('--save-path', default='./models-backbone/net-1')
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
-    parser.add_argument('--lr', type=float, default=0.05)
+    parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--project', type=str, default='CNNF-Prototype-Pretrain')
     parser.add_argument('--step_size', type=int, default=30)
     parser.add_argument('--gamma', type=float, default=0.1)
