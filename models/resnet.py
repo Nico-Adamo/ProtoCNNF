@@ -272,25 +272,25 @@ class ResNet(nn.Module):
         Resets the pooling and activation states
         """
 
-        for BasicBlock in self.layer1.layer:
-            BasicBlock.relu1.reset()
-            BasicBlock.relu2.reset()
-            BasicBlock.relu3.reset()
+        # for BasicBlock in self.layer1.layer:
+        #     BasicBlock.relu1.reset()
+        #     BasicBlock.relu2.reset()
+        #     BasicBlock.relu3.reset()
 
-        for BasicBlock in self.layer2.layer:
-            BasicBlock.relu1.reset()
-            BasicBlock.relu2.reset()
-            BasicBlock.relu3.reset()
+        # for BasicBlock in self.layer2.layer:
+        #     BasicBlock.relu1.reset()
+        #     BasicBlock.relu2.reset()
+        #     BasicBlock.relu3.reset()
 
-        for BasicBlock in self.layer3.layer:
-            BasicBlock.relu1.reset()
-            BasicBlock.relu2.reset()
-            BasicBlock.relu3.reset()
+        # for BasicBlock in self.layer3.layer:
+        #     BasicBlock.relu1.reset()
+        #     BasicBlock.relu2.reset()
+        #     BasicBlock.relu3.reset()
 
-        for BasicBlock in self.layer3.layer:
-            BasicBlock.relu1.reset()
-            BasicBlock.relu2.reset()
-            BasicBlock.relu3.reset()
+        # for BasicBlock in self.layer3.layer:
+        #     BasicBlock.relu1.reset()
+        #     BasicBlock.relu2.reset()
+        #     BasicBlock.relu3.reset()
 
     def forward_cycles(self, x):
         self.reset()
