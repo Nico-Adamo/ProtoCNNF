@@ -108,7 +108,7 @@ class Conv2d(nn.Module):
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size,
                               bias=bias, **kwargs)
 
-        if last_block == True or self.conv.stride[0] == 1:
+        if self.conv.stride[0] == 1:
             self.conv_t = nn.ConvTranspose2d(out_channels, in_channels,
                                             kernel_size, bias=bias, **kwargs)
         else:
