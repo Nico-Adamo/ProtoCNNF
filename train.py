@@ -33,6 +33,10 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--project', type=str, default='CNNF-Prototype')
     parser.add_argument('--restore-from', type=str, default="")
+
+    parser.add_argument('--ind-block', type=int, default=1)
+    parser.add_argument('--cycles', type=int, default = 2)
+
     args = parser.parse_args()
     pprint(vars(args))
 
@@ -55,14 +59,14 @@ if __name__ == '__main__':
     if args.restore_from != "":
         print("Restoring from {}".format(args.restore_from))
         checkpoint = torch.load(args.restore_from)
-        classifier = Classifier(ResNet(), args)
+        classifier = Classifier(ResNet(ind_block = args.ind_block, cycles=args.cycles), args)
         classifier.load_state_dict(checkpoint)
         model = classifier.encoder.cuda()
     else:
         if args.model == "Conv64":
             model = Convnet().cuda()
         else:
-            model = ResNet(ind_block = args.ind_block).cuda()
+            model = ResNet(ind_block = args.ind_block, cycles=args.cycles).cuda()
 
     optimizer = torch.optim.SGD(
           model.parameters(),
@@ -103,17 +107,7 @@ if __name__ == '__main__':
                 p = args.shot * args.train_way
                 data_shot, data_query = data[:p], data[p:]
 
-                proto, orig_feature = model(data_shot, first=True)
-                ff_prev = orig_feature
-
-                for i_cycle in range(args.cycles):
-                    # feedback
-                    recon = model(proto, step='backward')
-                    # feedforward
-                    ff_current = ff_prev + args.res_parameter * (recon - ff_prev)
-                    proto = model(ff_current, first=False)
-                    ff_prev = ff_current
-
+                proto = model.forward_cycles(data_shot)
                 proto = proto.reshape(args.shot, args.train_way, -1).mean(dim=0)
 
                 label = torch.arange(args.train_way).repeat(args.query)
@@ -146,7 +140,7 @@ if __name__ == '__main__':
                 p = args.shot * args.test_way
                 data_shot, data_query = data[:p], data[p:]
 
-                proto = model(data_shot)
+                proto = model.forward_cycles(data_shot)
                 proto = proto.reshape(args.shot, args.test_way, -1).mean(dim=0)
 
                 label = torch.arange(args.test_way).repeat(args.query)

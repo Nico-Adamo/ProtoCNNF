@@ -274,6 +274,7 @@ class ResNet(nn.Module):
             BasicBlock.relu3.reset()
             BasicBlock.DropBlock.reset()
             BasicBlock.dropout.reset()
+            BasicBlock.maxpool.reset()
 
         for BasicBlock in self.layer2.layer:
             BasicBlock.relu1.reset()
@@ -281,6 +282,7 @@ class ResNet(nn.Module):
             BasicBlock.relu3.reset()
             BasicBlock.DropBlock.reset()
             BasicBlock.dropout.reset()
+            BasicBlock.maxpool.reset()
 
         for BasicBlock in self.layer3.layer:
             BasicBlock.relu1.reset()
@@ -288,6 +290,7 @@ class ResNet(nn.Module):
             BasicBlock.relu3.reset()
             BasicBlock.DropBlock.reset()
             BasicBlock.dropout.reset()
+            BasicBlock.maxpool.reset()
 
         for BasicBlock in self.layer4.layer:
             BasicBlock.relu1.reset()
@@ -295,6 +298,7 @@ class ResNet(nn.Module):
             BasicBlock.relu3.reset()
             BasicBlock.DropBlock.reset()
             BasicBlock.dropout.reset()
+            BasicBlock.maxpool.reset()
 
     def forward_cycles(self, x):
         self.reset()
@@ -312,7 +316,7 @@ class ResNet(nn.Module):
         return proto
 
 if __name__ == "__main__":
-    model = ResNet(ind_block = 0, cycles = 2).cuda()
+    model = ResNet(ind_block = 1, cycles = 2).cuda()
     rand_img_batch = torch.randn(3,3,84,84).cuda()
     proto = model.forward_cycles(rand_img_batch)
     label = torch.arange(1).repeat(3)

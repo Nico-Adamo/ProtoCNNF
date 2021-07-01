@@ -209,6 +209,8 @@ class leakyReLU(nn.Module):
         else:
             return self.relu(x)
 
+    def reset(self):
+        pass
 
 class resReLU(nn.Module):
     """
