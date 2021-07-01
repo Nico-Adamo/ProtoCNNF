@@ -12,6 +12,9 @@ class DropBlock(nn.Module):
 
         self.block_size = block_size
 
+    def reset(self):
+        self.block_mask = None
+
     def forward(self, x, gamma, step='forward'):
         # shape: (bsize, channels, height, width)
         if 'forward' in step:

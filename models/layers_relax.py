@@ -362,3 +362,6 @@ class Dropout(nn.Module):
 
         else:
             raise ValueError("step must be 'forward' or 'backward'")
+
+    def reset(self):
+        self.dropout = None
