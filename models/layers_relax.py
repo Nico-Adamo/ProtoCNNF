@@ -103,7 +103,7 @@ class Conv2d(nn.Module):
     a transposed 2D convolution is applied to the input with the same weights
     as the 2D convolution.
     """
-    def __init__(self, in_channels, out_channels, kernel_size, bias=False, last_block=False, **kwargs):
+    def __init__(self, in_channels, out_channels, kernel_size, bias=False, **kwargs):
         super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size,
                               bias=bias, **kwargs)

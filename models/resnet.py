@@ -9,8 +9,8 @@ import numpy as np
 import math
 import torchvision
 from torchvision import datasets, transforms
-from layers import DropBlock
-import layers_relax as layers
+from models.layers import DropBlock
+import models.layers_relax as layers
 import matplotlib.pyplot as plt
 import pdb
 import shutil
@@ -30,24 +30,31 @@ class BasicBlock(nn.Module):
 
     def __init__(self, inplanes, planes, stride=1, drop_rate=0.0, drop_block=False, block_size=1, res_param = 0.1):
         super(BasicBlock, self).__init__()
-        self.ln1 = layers.GroupNorm(8, planes)
-        self.relu1 = layers.resReLU(res_param)
+        # self.ln1 = layers.GroupNorm(8, planes)
+        # self.relu1 = layers.resReLU(res_param)
+        self.ln1 = nn.BatchNorm2d(planes)
+        self.relu1 = nn.LeakyReLU(0.1)
+
         self.conv1 = res_conv3x3(inplanes, planes)
-        self.ln2 = layers.GroupNorm(8, planes)
-        self.relu2 = layers.resReLU(res_param)
+        # self.ln2 = layers.GroupNorm(8, planes)
+        # self.relu2 = layers.resReLU(res_param)
+        self.ln2 = nn.BatchNorm2d(planes)
+        self.relu2 = nn.LeakyReLU(0.1)
+
         self.conv2 = res_conv3x3(planes, planes)
         self.conv3 = res_conv3x3(planes, planes)
-        self.relu3 = layers.resReLU(res_param)
-        self.ln3 = layers.GroupNorm(8, planes)
+        # self.relu3 = layers.resReLU(res_param)
+        # self.ln3 = layers.GroupNorm(8, planes)
+        self.ln2 = nn.BatchNorm2d(planes)
+        self.relu2 = nn.LeakyReLU(0.1)
+
         self.maxpool = layers.MaxPool2d(stride)
         self.is_in_equal_out = (inplanes == planes)
-        self.downsample = (stride != 1 or not self.is_in_equal_out) and layers.Conv2d(
-            inplanes,
-            planes,
-            kernel_size=1,
-            stride=1,
-            padding=0,
-            bias=False) or None
+        self.downsample = (stride != 1 or not self.is_in_equal_out) and nn.Sequential(
+                layers.Conv2d(
+            inplanes, planes, 1, bias=False, stride=1, padding=0),
+                nn.BatchNorm2d(planes),
+            ) or None
         self.drop_rate = drop_rate
         self.num_batches_tracked = 0
         self.dropout = layers.Dropout(p = drop_rate)
@@ -292,16 +299,16 @@ class ResNet(nn.Module):
 
         for i_cycle in range(self.cycles):
             # feedback
-            recon = model(proto, step='backward')
+            recon = self.forward(proto, step='backward')
             # feedforward
             ff_current = ff_prev + self.res_param * (recon - ff_prev)
-            proto = model(ff_current, first=False)
+            proto = self.forward(ff_current, first=False)
             ff_prev = ff_current
 
         return proto
 
 if __name__ == "__main__":
-    model = ResNet(ind_block = 0, cycles = 0).cuda()
+    model = ResNet(ind_block = 0, cycles = 2).cuda()
     rand_img_batch = torch.randn(3,3,84,84).cuda()
     proto = model.forward_cycles(rand_img_batch)
     label = torch.arange(1).repeat(3)
