@@ -111,7 +111,7 @@ if __name__ == '__main__':
             ta = ta.item()
 
 
-            if epoch > 20 or (epoch-1) % 5 == 0:
+            if epoch > 100 or (epoch-1) % 5 == 0:
                 model.eval()
 
                 vl = Averager()
