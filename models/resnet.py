@@ -45,6 +45,7 @@ class BasicBlock(nn.Module):
         self.conv3 = res_conv3x3(planes, planes)
         # self.relu3 = layers.resReLU(res_param)
         self.ln3 = layers.GroupNorm(8, planes)
+        self.ln4 = layers.GroupNorm(8, planes)
         # self.ln3 = nn.BatchNorm2d(planes)
         self.relu3 = layers.leakyReLU(0.1)
 
@@ -75,6 +76,7 @@ class BasicBlock(nn.Module):
 
             if self.downsample is not None:
                 residual = self.downsample(x)
+                residual = self.ln4(residual)
             out += residual
             out = self.relu3(out)
             out = self.maxpool(out)
@@ -106,6 +108,7 @@ class BasicBlock(nn.Module):
             out = self.maxpool(out, step='backward')
             out = self.relu3(out, step='backward')
             if self.downsample is not None:
+                residual = self.ln4(residual, step='backward')
                 residual = self.downsample(out, step='backward')
             out = self.ln3(out, step='backward')
             out = self.conv3(out, step='backward')
