@@ -25,9 +25,8 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--project', type=str, default='CNNF-Prototype-Pretrain')
-    parser.add_argument('--step-size', type=int, default=30)
     parser.add_argument('--gamma', type=float, default=0.1)
-
+    parser.add_argument('--schedule', type=int, nargs='+', default=[75, 150, 300], help='Decrease learning rate at these epochs.')
     parser.add_argument('--ind-block', type=int, default=1)
     parser.add_argument('--cycles', type=int, default = 2)
 
@@ -78,6 +77,10 @@ if __name__ == '__main__':
     wandb.watch(model, log_freq=10)
 
     for epoch in range(1, args.max_epoch + 1):
+        if epoch in args.schedule:
+            initial_lr *= args.gamma
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = initial_lr
         print("Epoch " + str(epoch))
         lr_scheduler.step()
 
@@ -90,7 +93,6 @@ if __name__ == '__main__':
                 data, label = [_.cuda() for _ in batch]
                 label = label.type(torch.cuda.LongTensor)
 
-                model.encoder.reset()
                 logits = model(data)
 
                 loss = F.cross_entropy(logits, label)

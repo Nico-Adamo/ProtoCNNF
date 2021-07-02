@@ -17,7 +17,7 @@ from tqdm import tqdm
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--max-epoch', type=int, default=300)
+    parser.add_argument('--max-epoch', type=int, default=200)
     parser.add_argument('--save-epoch', type=int, default=20)
     parser.add_argument('--shot', type=int, default=1)
     parser.add_argument('--query', type=int, default=15)
@@ -27,10 +27,10 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
     parser.add_argument('--schedule', type=str, choices=['step'], default='step')
-    parser.add_argument('--step-size', type=int, default=30)
+    parser.add_argument('--step-size', type=int, default=20)
     parser.add_argument('--drop-rate', type=float, default=0.1)
     parser.add_argument('--gamma', type=float, default=0.2)
-    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--project', type=str, default='CNNF-Prototype')
     parser.add_argument('--restore-from', type=str, default="")
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     wandb.init(project=args.project, config=args)
 
     trainset = MiniImageNet('train')
-    train_sampler = CategoriesSampler(trainset.label, 500,
+    train_sampler = CategoriesSampler(trainset.label, 100,
                                       args.train_way, args.shot + args.query)
     train_loader = DataLoader(dataset=trainset, batch_sampler=train_sampler,
                               num_workers=8, pin_memory=False)
