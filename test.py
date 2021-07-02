@@ -6,16 +6,8 @@ import torch.nn as nn
 from mini_imagenet import MiniImageNet
 from samplers import CategoriesSampler
 from models.convnet import Convnet
-from models.resnet import ResNet_baseline
+from models.resnet import ResNet
 from utils import pprint, set_gpu, count_acc, Averager, euclidean_metric
-
-class Prototest(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.encoder = ResNet_baseline()
-
-    def forward(self, x):
-        return self.encoder(x)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -25,6 +17,8 @@ if __name__ == '__main__':
     parser.add_argument('--way', type=int, default=5)
     parser.add_argument('--shot', type=int, default=5)
     parser.add_argument('--query', type=int, default=30)
+    parser.add_argument('--ind-block', type=int, default=0)
+    parser.add_argument('--cycles', type=int, default=0)
     args = parser.parse_args()
     pprint(vars(args))
 
@@ -36,8 +30,8 @@ if __name__ == '__main__':
     loader = DataLoader(dataset, batch_sampler=sampler,
                         num_workers=8, pin_memory=False)
 
-    model = Prototest().cuda()
-    model.load_state_dict(torch.load(args.load)['params'])
+    model = ResNet(ind_block = args.ind_block, cycles=args.cycles).cuda()
+    model.load_state_dict(torch.load(args.load))
     model.eval()
 
     ave_acc = Averager()

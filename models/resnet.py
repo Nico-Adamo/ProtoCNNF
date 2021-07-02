@@ -215,7 +215,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x, step='forward', first=True, inter=False):
+    def forward_cycle(self, x, step='forward', first=True, inter=False):
         if ('backward' in step):
             x = self.flatten(x, step='backward')
             if self.keep_avg_pool:
@@ -300,23 +300,23 @@ class ResNet(nn.Module):
             BasicBlock.dropout.reset()
             BasicBlock.maxpool.reset()
 
-    def forward_cycles(self, x):
+    def forward(self, x):
         self.reset()
-        proto, orig_feature = self.forward(x, first=True, inter=True)
+        proto, orig_feature = self.forward_cycle(x, first=True, inter=True)
         ff_prev = orig_feature
 
         for i_cycle in range(self.cycles):
             # feedback
-            recon = self.forward(proto, step='backward')
+            recon = self.forward_cycle(proto, step='backward')
             # feedforward
             ff_current = ff_prev + self.res_param * (recon - ff_prev)
-            proto = self.forward(ff_current, first=False)
+            proto = self.forward_cycle(ff_current, first=False)
             ff_prev = ff_current
 
         return proto
 
 if __name__ == "__main__":
-    model = ResNet(ind_block = 1, cycles = 2).cuda()
+    model = ResNet(ind_block = 0, cycles = 0).cuda()
     rand_img_batch = torch.randn(3,3,84,84).cuda()
     proto = model.forward_cycles(rand_img_batch)
     label = torch.arange(1).repeat(3)
