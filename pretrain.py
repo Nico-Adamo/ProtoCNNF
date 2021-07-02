@@ -59,7 +59,6 @@ if __name__ == '__main__':
           momentum=0.9,
           nesterov=True,
           weight_decay=5e-4)
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
 
     def save_model(name):
         torch.save(model.state_dict(), osp.join(args.save_path, name + '.pth'))
@@ -82,7 +81,6 @@ if __name__ == '__main__':
             for param_group in optimizer.param_groups:
                 param_group['lr'] = initial_lr
         print("Epoch " + str(epoch))
-        lr_scheduler.step()
 
         model.train()
 

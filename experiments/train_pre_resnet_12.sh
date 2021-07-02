@@ -1,3 +1,5 @@
+#!/bin/bash
+
 python3 pretrain.py --max-epoch 500 \
                  --save-epoch 20 \
                  --query 15 \
