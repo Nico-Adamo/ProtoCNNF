@@ -107,13 +107,13 @@ if __name__ == '__main__':
                 p = args.shot * args.train_way
                 data_shot, data_query = data[:p], data[p:]
 
-                proto = model.forward_cycles(data_shot)
+                proto = model(data_shot)
                 proto = proto.reshape(args.shot, args.train_way, -1).mean(dim=0)
 
                 label = torch.arange(args.train_way).repeat(args.query)
                 label = label.type(torch.cuda.LongTensor)
 
-                logits = euclidean_metric(model.forward_cycles(data_query), proto)
+                logits = euclidean_metric(model(data_query), proto)
                 loss = F.cross_entropy(logits, label)
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
@@ -140,13 +140,13 @@ if __name__ == '__main__':
                 p = args.shot * args.test_way
                 data_shot, data_query = data[:p], data[p:]
 
-                proto = model.forward_cycles(data_shot)
+                proto = model(data_shot)
                 proto = proto.reshape(args.shot, args.test_way, -1).mean(dim=0)
 
                 label = torch.arange(args.test_way).repeat(args.query)
                 label = label.type(torch.cuda.LongTensor)
 
-                logits = euclidean_metric(model.forward_cycles(data_query), proto)
+                logits = euclidean_metric(model(data_query), proto)
                 loss = F.cross_entropy(logits, label)
                 acc = count_acc(logits, label)
 
