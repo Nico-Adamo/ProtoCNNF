@@ -29,7 +29,6 @@ if __name__ == '__main__':
                                 args.batch, args.way, args.shot + args.query)
     loader = DataLoader(dataset, batch_sampler=sampler,
                         num_workers=8, pin_memory=False)
-
     model = ResNet(ind_block = args.ind_block, cycles=args.cycles).cuda()
     model.load_state_dict(torch.load(args.load))
     model.eval()

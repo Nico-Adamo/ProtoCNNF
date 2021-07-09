@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
         tl = Averager()
         ta = Averager()
-        with tqdm(train_loader, total=500) as pbar:
+        with tqdm(train_loader, total=100) as pbar:
             for i, batch in enumerate(pbar, 1):
                 data, _ = [_.cuda() for _ in batch]
                 p = args.shot * args.train_way

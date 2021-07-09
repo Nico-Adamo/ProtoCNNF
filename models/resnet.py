@@ -228,6 +228,7 @@ class ResNet(nn.Module):
             if ('forward' in step):
                 orig_feature = x
                 for block in self.layer:
+                    print(x.size())
                     x = block(x)
             elif ('backward' in step):
                 for block in self.layer[::-1]:
@@ -321,7 +322,7 @@ class ResNet(nn.Module):
 if __name__ == "__main__":
     model = ResNet(ind_block = 0, cycles = 0).cuda()
     rand_img_batch = torch.randn(3,3,84,84).cuda()
-    proto = model.forward_cycles(rand_img_batch)
+    proto = model(rand_img_batch)
     label = torch.arange(1).repeat(3)
     label = label.type(torch.cuda.LongTensor)
 

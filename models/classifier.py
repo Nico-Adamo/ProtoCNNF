@@ -19,7 +19,7 @@ class Classifier(nn.Module):
         super().__init__()
         self.args = args
 
-        self.num_classes = 100
+        self.num_classes = 64
         if(args.model == 'ResNet12'):
             self.hdim = 640
         self.encoder = encoder
