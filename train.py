@@ -11,6 +11,7 @@ from samplers import CategoriesSampler
 from models.classifier import Classifier
 from models.convnet import Convnet
 from models.resnet import ResNet
+from models.wrn import WideResNet
 from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric
 from tqdm import tqdm
 
@@ -25,7 +26,7 @@ if __name__ == '__main__':
     parser.add_argument('--test-way', type=int, default=5)
     parser.add_argument('--save-path', default='./models/proto-1')
     parser.add_argument('--gpu', default='0')
-    parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
+    parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12', 'WRN28'])
     parser.add_argument('--schedule', type=str, choices=['step'], default='step')
     parser.add_argument('--step-size', type=int, default=20)
     parser.add_argument('--drop-rate', type=float, default=0.1)
@@ -34,6 +35,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', type=str, default='CNNF-Prototype')
     parser.add_argument('--restore-from', type=str, default="")
 
+    parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--ind-block', type=int, default=1)
     parser.add_argument('--cycles', type=int, default = 2)
 
@@ -65,6 +67,8 @@ if __name__ == '__main__':
     else:
         if args.model == "Conv64":
             model = Convnet().cuda()
+        elif args.model == "WRN28":
+            model = WideResNet(ind_block = args.ind_block, cycles=args.cycles, ind_layer = args.ind_layer).cuda()
         else:
             model = ResNet(ind_block = args.ind_block, cycles=args.cycles).cuda()
 

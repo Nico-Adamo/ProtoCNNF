@@ -7,7 +7,7 @@ class Prototype(nn.Module):
     Keep running average for prototype.
     """
 
-    def __init__(self, momentum=0.1, numofclass=10):
+    def __init__(self, momentum=0.1, numofclass=64):
         super(Prototype, self).__init__()
         self.num_batches_tracked = 0
         self.numofclass = numofclass
@@ -15,7 +15,6 @@ class Prototype(nn.Module):
         self.running_mean = None
 
     def forward(self, x, label):
-
         self.num_batches_tracked += 1
         if self.momentum is None:  # use cumulative moving average
             average_factor = 1.0 / float(self.num_batches_tracked)

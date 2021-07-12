@@ -10,6 +10,7 @@ from mini_imagenet import MiniImageNet
 from samplers import CategoriesSampler
 from models.convnet import Convnet
 from models.resnet import ResNet
+from models.wrn import WideResNet
 from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric
 from tqdm import tqdm
 from models.classifier import Classifier
@@ -22,12 +23,13 @@ if __name__ == '__main__':
     parser.add_argument('--query', type=int, default=15)
     parser.add_argument('--save-path', default='./models-backbone/net-1')
     parser.add_argument('--gpu', default='0')
-    parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12'])
+    parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12', 'WRN28'])
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--project', type=str, default='CNNF-Prototype-Pretrain')
     parser.add_argument('--gamma', type=float, default=0.1)
     parser.add_argument('--schedule', type=int, nargs='+', default=[75, 150, 300], help='Decrease learning rate at these epochs.')
     parser.add_argument('--ind-block', type=int, default=1)
+    parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--cycles', type=int, default = 2)
 
     args = parser.parse_args()
@@ -50,6 +52,8 @@ if __name__ == '__main__':
 
     if args.model == "Conv64":
         model = Classifier(Convnet(), args).cuda()
+    elif args.model == "WRN28":
+        model = Classifier(WideResNet(ind_block = args.ind_block, ind_layer = args.ind_layer, cycles = args.cycles), args).cuda()
     else:
         model = Classifier(ResNet(ind_block = args.ind_block, cycles = args.cycles), args).cuda()
     initial_lr = args.lr
