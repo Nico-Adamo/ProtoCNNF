@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import layers_relax as layers
+import models.layers_relax as layers
 import logging
 import os
 import torch.optim as optim
