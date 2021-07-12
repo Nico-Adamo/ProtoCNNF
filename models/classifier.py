@@ -20,7 +20,7 @@ class Classifier(nn.Module):
         self.args = args
 
         self.num_classes = 64
-        if(args.model == 'ResNet12'):
+        if(args.model == 'ResNet12' or args.model == 'WRN28'):
             self.hdim = 640
         self.encoder = encoder
         self.fc = nn.Linear(self.hdim, self.num_classes)
