@@ -39,8 +39,7 @@ if __name__ == '__main__':
     parser.add_argument('--save-epoch', type=int, default=20)
     parser.add_argument('--shot', type=int, default=1)
     parser.add_argument('--query', type=int, default=15)
-    parser.add_argument('--train-way', type=int, default=30)
-    parser.add_argument('--test-way', type=int, default=5)
+    parser.add_argument('--way', type=int, default=5)
     parser.add_argument('--save-path', default='./models/proto-1')
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12', 'WRN28'])
@@ -54,8 +53,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--episodes-per-epoch', type=int, default=100)
     parser.add_argument('--multi-gpu', type=bool, default=False)
+    parser.add_argument('--augment', type=bool, default=False)
     parser.add_argument('--num-workers', type=int, default=8)
-    parser.add_argument('--dataset', options=['MiniImageNet'], default='MiniImageNet')
+    parser.add_argument('--dataset', choices=['MiniImageNet'], default='MiniImageNet')
 
     parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--ind-block', type=int, default=1)

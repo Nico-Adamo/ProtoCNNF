@@ -90,7 +90,7 @@ def get_dataloader(args):
     num_device = torch.cuda.device_count()
     num_episodes = args.episodes_per_epoch*num_device if args.multi_gpu else args.episodes_per_epoch
     num_workers=args.num_workers*num_device if args.multi_gpu else args.num_workers
-    trainset = Dataset('train', args, augment=args.augment)
+    trainset = Dataset('train', augment=args.augment)
     args.num_class = trainset.num_class
     train_sampler = CategoriesSampler(trainset.label,
                                       num_episodes,
