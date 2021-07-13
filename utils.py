@@ -4,7 +4,9 @@ import time
 import pprint
 
 import torch
-
+from samplers import CategoriesSampler
+from torch.utils.data import DataLoader, Subset
+import torch.nn as nn
 
 def set_gpu(x):
     os.environ['CUDA_VISIBLE_DEVICES'] = x
@@ -51,6 +53,11 @@ def euclidean_metric(a, b):
     logits = -((a - b)**2).sum(dim=2)
     return logits
 
+def cosine_similarity(a, b, temperature=1):
+    """Returns cosine similarity between a and b, computed along dim"""
+    numerator = (a * b).sum(dim=1)
+    denominator = (a * a).sum(dim=1) * (b * b).sum(dim=1)
+    return numerator / torch.sqrt(denominator + 1e-7)
 
 class Timer():
 
@@ -74,3 +81,51 @@ def pprint(x):
 def l2_loss(pred, label):
     return ((pred - label)**2).sum() / len(pred) / 2
 
+def get_dataloader(args):
+    if args.dataset == 'MiniImageNet':
+        from mini_imagenet import MiniImageNet as Dataset
+    else:
+        raise ValueError('Non-supported Dataset.')
+
+    num_device = torch.cuda.device_count()
+    num_episodes = args.episodes_per_epoch*num_device if args.multi_gpu else args.episodes_per_epoch
+    num_workers=args.num_workers*num_device if args.multi_gpu else args.num_workers
+    trainset = Dataset('train', args, augment=args.augment)
+    args.num_class = trainset.num_class
+    train_sampler = CategoriesSampler(trainset.label,
+                                      num_episodes,
+                                      max(args.way, args.num_classes),
+                                      args.shot + args.query)
+
+    train_loader = DataLoader(dataset=trainset,
+                                  num_workers=num_workers,
+                                  batch_sampler=train_sampler,
+                                  pin_memory=True)
+
+    valset = Dataset('val', args)
+    val_sampler = CategoriesSampler(valset.label,
+                            args.num_eval_episodes,
+                            args.eval_way, args.eval_shot + args.eval_query)
+    val_loader = DataLoader(dataset=valset,
+                            batch_sampler=val_sampler,
+                            num_workers=args.num_workers,
+                            pin_memory=True)
+
+
+    testset = Dataset('test', args)
+    test_sampler = CategoriesSampler(testset.label,
+                            10000, # args.num_eval_episodes,
+                            args.eval_way, args.eval_shot + args.eval_query)
+    test_loader = DataLoader(dataset=testset,
+                            batch_sampler=test_sampler,
+                            num_workers=args.num_workers,
+                            pin_memory=True)
+
+    return train_loader, val_loader, test_loader
+
+if __name__ == '__main__':
+    a = torch.zeros(1, 2, 3, 4)
+    b = torch.zeros(1, 2, 3, 4)
+    print(cosine_similarity(a, b))
+    print(euclidean_metric(a, b))
+    print(cosine_similarity(a, b, temperature=2))

@@ -12,8 +12,25 @@ from models.classifier import Classifier
 from models.convnet import Convnet
 from models.resnet import ResNet
 from models.wrn import WideResNet
-from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric
+from models.protonet import ProtoNet
+from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader
 from tqdm import tqdm
+import torch.nn as nn
+
+def prepare_label(args):
+
+    # prepare one-hot label
+    label = torch.arange(args.way, dtype=torch.int16).repeat(args.query)
+
+    label = label.type(torch.LongTensor)
+
+    if torch.cuda.is_available():
+        label = label.cuda()
+
+    return label
+
+def save_model(name):
+    torch.save(model.state_dict(), osp.join(args.save_path, name + '.pth'))
 
 if __name__ == '__main__':
 
@@ -35,6 +52,11 @@ if __name__ == '__main__':
     parser.add_argument('--project', type=str, default='CNNF-Prototype')
     parser.add_argument('--restore-from', type=str, default="")
 
+    parser.add_argument('--episodes-per-epoch', type=int, default=100)
+    parser.add_argument('--multi-gpu', type=bool, default=False)
+    parser.add_argument('--num-workers', type=int, default=8)
+    parser.add_argument('--dataset', options=['MiniImageNet'], default='MiniImageNet')
+
     parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--ind-block', type=int, default=1)
     parser.add_argument('--cycles', type=int, default = 2)
@@ -47,30 +69,18 @@ if __name__ == '__main__':
 
     wandb.init(project=args.project, config=args)
 
-    trainset = MiniImageNet('train')
-    train_sampler = CategoriesSampler(trainset.label, 100,
-                                      args.train_way, args.shot + args.query)
-    train_loader = DataLoader(dataset=trainset, batch_sampler=train_sampler,
-                              num_workers=8, pin_memory=False)
+    train_loader, val_loader, test_loader = get_dataloader(args)
 
-    valset = MiniImageNet('val')
-    val_sampler = CategoriesSampler(valset.label, 200,
-                                    args.test_way, args.shot + args.query)
-    val_loader = DataLoader(dataset=valset, batch_sampler=val_sampler,
-                            num_workers=8, pin_memory=False)
+    model = ProtoNet(args).cuda()
+
     if args.restore_from != "":
         print("Restoring from {}".format(args.restore_from))
         checkpoint = torch.load(args.restore_from)
-        classifier = Classifier(ResNet(ind_block = args.ind_block, cycles=args.cycles), args)
-        classifier.load_state_dict(checkpoint)
-        model = classifier.encoder.cuda()
-    else:
-        if args.model == "Conv64":
-            model = Convnet().cuda()
-        elif args.model == "WRN28":
-            model = WideResNet(ind_block = args.ind_block, cycles=args.cycles, ind_layer = args.ind_layer).cuda()
-        else:
-            model = ResNet(ind_block = args.ind_block, cycles=args.cycles).cuda()
+        pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model.state_dict()}
+        model.load_state_dict(pretrained_dict)
+
+    if args.multi_gpu:
+        model.encoder = nn.DataParallel(model.encoder, dim=0)
 
     optimizer = torch.optim.SGD(
           model.parameters(),
@@ -81,9 +91,6 @@ if __name__ == '__main__':
 
     if args.schedule == 'step':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
-
-    def save_model(name):
-        torch.save(model.state_dict(), osp.join(args.save_path, name + '.pth'))
 
     trlog = {}
     trlog['args'] = vars(args)
@@ -96,6 +103,7 @@ if __name__ == '__main__':
     timer = Timer()
 
     wandb.watch(model, log_freq=10)
+    label, label_aux = prepare_label(args)
 
     for epoch in range(1, args.max_epoch + 1):
         print("Epoch " + str(epoch))
@@ -105,20 +113,13 @@ if __name__ == '__main__':
 
         tl = Averager()
         ta = Averager()
-        with tqdm(train_loader, total=100) as pbar:
+        with tqdm(train_loader, total=args.episodes_per_epoch) as pbar:
             for i, batch in enumerate(pbar, 1):
                 data, _ = [_.cuda() for _ in batch]
-                p = args.shot * args.train_way
-                data_shot, data_query = data[:p], data[p:]
 
-                proto = model(data_shot)
-                proto = proto.reshape(args.shot, args.train_way, -1).mean(dim=0)
-
-                label = torch.arange(args.train_way).repeat(args.query)
-                label = label.type(torch.cuda.LongTensor)
-
-                logits = euclidean_metric(model(data_query), proto)
+                logits = model(data)
                 loss = F.cross_entropy(logits, label)
+
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
 
@@ -141,17 +142,9 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
-                p = args.shot * args.test_way
-                data_shot, data_query = data[:p], data[p:]
-
-                proto = model(data_shot)
-                proto = proto.reshape(args.shot, args.test_way, -1).mean(dim=0)
-
-                label = torch.arange(args.test_way).repeat(args.query)
-                label = label.type(torch.cuda.LongTensor)
-
-                logits = euclidean_metric(model(data_query), proto)
+                logits = model(data)
                 loss = F.cross_entropy(logits, label)
+
                 acc = count_acc(logits, label)
 
                 vl.add(loss.item())

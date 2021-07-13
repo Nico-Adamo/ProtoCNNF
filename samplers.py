@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 
-
 class CategoriesSampler():
 
     def __init__(self, label, n_batch, n_cls, n_per):
@@ -18,7 +17,7 @@ class CategoriesSampler():
 
     def __len__(self):
         return self.n_batch
-    
+
     def __iter__(self):
         for i_batch in range(self.n_batch):
             batch = []
@@ -29,4 +28,3 @@ class CategoriesSampler():
                 batch.append(l[pos])
             batch = torch.stack(batch).t().reshape(-1)
             yield batch
-

@@ -8,7 +8,7 @@ python3 pretrain.py --max-epoch 100 \
                  --gpu 1 \
                  --model "WRN28" \
                  --project "CNNF-Prototype-Pretrain" \
-                 --ind-block 2 \
+                 --ind-block 3 \
                  --ind-layer 2 \
                  --cycles 1
 
@@ -23,7 +23,7 @@ python3 train.py --max-epoch 200 \
                  --restore-from "models-backbone-feedback/proto-feedback-21-wrn/max-acc.pth" \
                  --save-path "models/proto-feedback-21-wrn-5shot" \
                  --gpu 1 \
-                 --ind-block 2 \
+                 --ind-block 3 \
                  --ind-layer 2 \
                  --cycles 1 \
                  --model "WRN28" \
