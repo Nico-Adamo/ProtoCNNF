@@ -94,7 +94,7 @@ def get_dataloader(args):
     args.num_class = trainset.num_class
     train_sampler = CategoriesSampler(trainset.label,
                                       num_episodes,
-                                      max(args.way, args.num_classes),
+                                      args.way,
                                       args.shot + args.query)
 
     train_loader = DataLoader(dataset=trainset,
@@ -105,7 +105,7 @@ def get_dataloader(args):
     valset = Dataset('val', args)
     val_sampler = CategoriesSampler(valset.label,
                             args.num_eval_episodes,
-                            args.eval_way, args.eval_shot + args.eval_query)
+                            args.way, args.shot + args.query)
     val_loader = DataLoader(dataset=valset,
                             batch_sampler=val_sampler,
                             num_workers=args.num_workers,

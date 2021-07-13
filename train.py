@@ -52,6 +52,8 @@ if __name__ == '__main__':
     parser.add_argument('--restore-from', type=str, default="")
 
     parser.add_argument('--episodes-per-epoch', type=int, default=100)
+    parser.add_argument('--num-eval-episodes', type=int, default=200)
+
     parser.add_argument('--multi-gpu', type=bool, default=False)
     parser.add_argument('--augment', type=bool, default=False)
     parser.add_argument('--num-workers', type=int, default=8)
