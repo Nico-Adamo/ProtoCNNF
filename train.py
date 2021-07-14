@@ -120,9 +120,12 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, _ = [_.cuda() for _ in batch]
 
-                logits = model(data)
-                loss = F.cross_entropy(logits, label)
+                cycle_logits = model(data, inter_cycle=True)
+                loss = 0
+                for j in range(args.cycles + 1):
+                    loss += F.cross_entropy(cycle_logits[j], label)
 
+                logits = cycle_logits[-1]
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
 

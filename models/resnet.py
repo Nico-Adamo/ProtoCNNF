@@ -266,9 +266,10 @@ class ResNet(nn.Module):
         self.layer4.dropout.reset()
         self.layer4.maxpool.reset()
 
-    def forward(self, x):
+    def forward(self, x, inter_cycle = False):
         self.reset()
         proto, orig_feature = self.forward_cycle(x, first=True, inter=True)
+        cycle_proto = [proto]
         ff_prev = orig_feature
 
         for i_cycle in range(self.cycles):
@@ -277,9 +278,13 @@ class ResNet(nn.Module):
             # feedforward
             ff_current = ff_prev + self.res_param * (recon - ff_prev)
             proto = self.forward_cycle(ff_current, first=False)
+            cycle_proto.append(proto)
             ff_prev = ff_current
 
-        return proto
+        if inter_cycle:
+            return cycle_proto
+        else:
+            return cycle_proto[-1]
 
 if __name__ == "__main__":
     model = ResNet(ind_block = 0, cycles = 0).cuda()

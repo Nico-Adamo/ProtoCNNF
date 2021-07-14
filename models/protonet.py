@@ -24,18 +24,26 @@ class ProtoNet(nn.Module):
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
                     torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + args.query))).long().view(1, args.query, args.way))
 
-    def forward(self, x, get_feature=False):
+    def forward(self, x, get_feature=False, inter_cycle=True):
         if get_feature:
             return self.encoder(x)
         else:
             # feature extraction
             x = x.squeeze(0)
-            instance_embs = self.encoder(x)
-            num_inst = instance_embs.shape[0]
-            # split support query set for few-shot data
-            support_idx, query_idx = self.split_instances(x)
-            logits = self._forward(instance_embs, support_idx, query_idx)
-            return logits
+            cycle_instance_embs = self.encoder(x, inter_cycle=True)
+            cycle_logits = []
+            for cycle in range(self.args.cycles + 1):
+                instance_embs = cycle_instance_embs[cycle]
+                num_inst = instance_embs.shape[0]
+                # split support query set for few-shot data
+                support_idx, query_idx = self.split_instances(x)
+
+                logits = self._forward(instance_embs, support_idx, query_idx)
+                cycle_logits.append(logits)
+            if inter_cycle:
+                return cycle_logits
+            else:
+                return logits
 
     def _forward(self, instance_embs, support_idx, query_idx):
         emb_dim = instance_embs.size(-1)
