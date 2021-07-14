@@ -228,7 +228,6 @@ class ResNet(nn.Module):
             if ('forward' in step):
                 orig_feature = x
                 for block in self.layer:
-                    print(x.size())
                     x = block(x)
             elif ('backward' in step):
                 for block in self.layer[::-1]:
