@@ -11,7 +11,7 @@ import torchvision
 from torchvision import datasets, transforms
 from models.layers import DropBlock
 import models.layers_relax as layers
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as p
 import pdb
 import shutil
 import sys
@@ -123,80 +123,16 @@ class BasicBlock(nn.Module):
 
             return out
 
-class NetworkBlock(nn.Module):
-    """Layer container for blocks."""
-    def __init__(self, block,
-               in_planes,
-               out_planes,
-               stride,
-               drop_rate=0.0,
-               drop_block = False,
-               block_size = 1,
-               ind=0,
-               res_param=0.1):
-        super(NetworkBlock, self).__init__()
-        self.res_param = res_param
-        self.layer = self._make_layer(block, in_planes, out_planes,
-                                      stride, drop_rate, drop_block = drop_block, block_size = block_size)
-        # index of basic block to reconstruct to.
-        self.ind = ind
-
-    def forward(self, x, step='forward', first=True, inter=False):
-        # first: the first forward pass is the same as conventional CNN.
-        # inter: if True, return intemediate features.
-        # reconstruct to pixel level
-        if (self.ind==0):
-            if ('forward' in step):
-                for block in self.layer:
-                    x = block(x)
-            elif ('backward' in step):
-                for block in self.layer[::-1]:
-                    x = block(x, step='backward')
-
-        # reconstruct to intermediate layers
-        elif (self.ind>0):
-            if ('forward' in step):
-                if (first==True):
-                    if(inter==False):
-                        for block in self.layer:
-                            x = block(x)
-                    elif(inter==True):
-                        for idx, block in enumerate(self.layer):
-                            x = block(x)
-                            if ((idx+1)==self.ind):
-                                orig_feature = x
-                elif (first==False):
-                    for idx, block in enumerate(self.layer):
-                        if (idx+1 > self.ind):
-                            x = block(x)
-            elif ('backward' in step):
-                ind_back = self.nb_layers-self.ind
-                for idx, block in enumerate(self.layer[::-1]):
-                    if (idx < ind_back):
-                        x = block(x, step='backward')
-        if (inter==False):
-            return x
-        elif (inter==True):
-            return x, orig_feature
-
-
-    def _make_layer(self, block, in_planes, planes, stride,
-                  drop_rate, drop_block=False, block_size = 1):
-        layers = []
-        layers.append(
-              block(in_planes, planes, stride, drop_rate, drop_block, block_size, self.res_param))
-        return nn.Sequential(*layers)
-
 class ResNet(nn.Module):
 
-    def __init__(self, block=BasicBlock, keep_prob=1.0, avg_pool=True, drop_rate=0.1, dropblock_size=5, ind_block = 0, ind_layer = 0, cycles = 0, res_param = 0.1):
+    def __init__(self, block=BasicBlock, keep_prob=1.0, avg_pool=True, drop_rate=0.1, dropblock_size=5, ind_block = 0, cycles = 0, res_param = 0.1):
         self.inplanes = 3
         super(ResNet, self).__init__()
 
-        self.layer1 = NetworkBlock(block, self.inplanes, 64, stride=2, drop_rate=drop_rate, res_param=0.1, ind = ind_layer)
-        self.layer2 = NetworkBlock(block, 64, 160, stride=2, drop_rate=drop_rate)
-        self.layer3 = NetworkBlock(block, 160, 320, stride=2, drop_rate=drop_rate, drop_block=True, block_size=dropblock_size)
-        self.layer4 = NetworkBlock(block, 320, 640, stride=2, drop_rate=drop_rate, drop_block=True, block_size=dropblock_size)
+        self.layer1 = block(self.inplanes, 64, stride=2, drop_rate=drop_rate, res_param=0.1)
+        self.layer2 = block(64, 160, stride=2, drop_rate=drop_rate)
+        self.layer3 = block(160, 320, stride=2, drop_rate=drop_rate, drop_block=True, block_size=dropblock_size)
+        self.layer4 = block(320, 640, stride=2, drop_rate=drop_rate, drop_block=True, block_size=dropblock_size)
         self.layer = [self.layer1, self.layer2, self.layer3, self.layer4]
         if avg_pool:
             self.avgpool = layers.AvgPool2d(5, scale_factor=5, stride=1)
@@ -205,7 +141,6 @@ class ResNet(nn.Module):
         self.keep_avg_pool = avg_pool
         self.dropout = layers.Dropout(p=1 - self.keep_prob)
         self.drop_rate = drop_rate
-        self.ind_layer = ind_layer
         self.ind_block = ind_block
         self.res_param = res_param
         self.cycles = cycles
@@ -227,34 +162,67 @@ class ResNet(nn.Module):
         if (self.ind_block==0):
             if ('forward' in step):
                 orig_feature = x
-                for block in self.layer:
-                    x = block(x)
+                for idx in range(4):
+                    # Rather than having a list of layers, we have to do this stupid hack for pytorch to recognize
+                    # the layer as a module, see https://github.com/pytorch/pytorch/issues/8637
+                    if (idx==0):
+                        x = self.layer1(x, step='forward')
+                    elif (idx==1):
+                        x = self.layer2(x, step='forward')
+                    elif (idx==2):
+                        x = self.layer3(x, step='forward')
+                    elif (idx==3):
+                        x = self.layer4(x, step='forward')
             elif ('backward' in step):
-                for block in self.layer[::-1]:
-                    x = block(x, step='backward')
+                for idx in range(3, -1, -1):
+                    if (idx == 0):
+                        x = self.layer1(x, step='backward')
+                    elif (idx == 1):
+                        x = self.layer2(x, step='backward')
+                    elif (idx == 2):
+                        x = self.layer3(x, step='backward')
+                    elif (idx == 3):
+                        x = self.layer4(x, step='backward')
 
         # reconstruct to intermediate layers
         elif (self.ind_block>0):
-
             if ('forward' in step):
                 if (first==True):
                     if(inter==False):
                         for block in self.layer:
                             x = block(x)
                     elif(inter==True):
-                        for idx, block in enumerate(self.layer):
-                            x = block(x)
+                        for idx in range(4):
+                            if (idx==0):
+                                x = self.layer1(x, step='forward')
+                            elif (idx==1):
+                                x = self.layer2(x, step='forward')
+                            elif (idx==2):
+                                x = self.layer3(x, step='forward')
+                            elif (idx==3):
+                                x = self.layer4(x, step='forward')
                             if ((idx+1)==self.ind_block):
                                 orig_feature = x
                 elif (first==False):
-                    for idx, block in enumerate(self.layer):
-                        if (idx+1 > self.ind_block):
-                            x = block(x)
+                    for idx in range(self.ind_block, 4):
+                        if (idx == 0):
+                            x = self.layer1(x, step='forward')
+                        elif (idx == 1):
+                            x = self.layer2(x, step='forward')
+                        elif (idx == 2):
+                            x = self.layer3(x, step='forward')
+                        elif (idx == 3):
+                            x = self.layer4(x, step='forward')
             elif ('backward' in step):
-                ind_back = len(self.layer)-self.ind_block
-                for idx, block in enumerate(self.layer[::-1]):
-                    if (idx < ind_back):
-                        x = block(x, step='backward')
+                for idx in range(3, self.ind_block - 1, -1):
+                    if (idx == 0):
+                        x = self.layer1(x, step='backward')
+                    elif (idx == 1):
+                        x = self.layer2(x, step='backward')
+                    elif (idx == 2):
+                        x = self.layer3(x, step='backward')
+                    elif (idx == 3):
+                        x = self.layer4(x, step='backward')
 
         if ('forward' in step):
             if self.keep_avg_pool:
@@ -270,38 +238,33 @@ class ResNet(nn.Module):
         """
         Resets the pooling and activation states
         """
+        self.layer1.relu1.reset()
+        self.layer1.relu2.reset()
+        self.layer1.relu3.reset()
+        self.layer1.DropBlock.reset()
+        self.layer1.dropout.reset()
+        self.layer1.maxpool.reset()
 
-        for BasicBlock in self.layer1.layer:
-            BasicBlock.relu1.reset()
-            BasicBlock.relu2.reset()
-            BasicBlock.relu3.reset()
-            BasicBlock.DropBlock.reset()
-            BasicBlock.dropout.reset()
-            BasicBlock.maxpool.reset()
+        self.layer2.relu1.reset()
+        self.layer2.relu2.reset()
+        self.layer2.relu3.reset()
+        self.layer2.DropBlock.reset()
+        self.layer2.dropout.reset()
+        self.layer2.maxpool.reset()
 
-        for BasicBlock in self.layer2.layer:
-            BasicBlock.relu1.reset()
-            BasicBlock.relu2.reset()
-            BasicBlock.relu3.reset()
-            BasicBlock.DropBlock.reset()
-            BasicBlock.dropout.reset()
-            BasicBlock.maxpool.reset()
+        self.layer3.relu1.reset()
+        self.layer3.relu2.reset()
+        self.layer3.relu3.reset()
+        self.layer3.DropBlock.reset()
+        self.layer3.dropout.reset()
+        self.layer3.maxpool.reset()
 
-        for BasicBlock in self.layer3.layer:
-            BasicBlock.relu1.reset()
-            BasicBlock.relu2.reset()
-            BasicBlock.relu3.reset()
-            BasicBlock.DropBlock.reset()
-            BasicBlock.dropout.reset()
-            BasicBlock.maxpool.reset()
-
-        for BasicBlock in self.layer4.layer:
-            BasicBlock.relu1.reset()
-            BasicBlock.relu2.reset()
-            BasicBlock.relu3.reset()
-            BasicBlock.DropBlock.reset()
-            BasicBlock.dropout.reset()
-            BasicBlock.maxpool.reset()
+        self.layer4.relu1.reset()
+        self.layer4.relu2.reset()
+        self.layer4.relu3.reset()
+        self.layer4.DropBlock.reset()
+        self.layer4.dropout.reset()
+        self.layer4.maxpool.reset()
 
     def forward(self, x):
         self.reset()
