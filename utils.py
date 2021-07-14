@@ -115,7 +115,7 @@ def get_dataloader(args):
     testset = Dataset('test', args)
     test_sampler = CategoriesSampler(testset.label,
                             10000, # args.num_eval_episodes,
-                            args.eval_way, args.eval_shot + args.eval_query)
+                            args.way, args.shot + args.query)
     test_loader = DataLoader(dataset=testset,
                             batch_sampler=test_sampler,
                             num_workers=args.num_workers,
