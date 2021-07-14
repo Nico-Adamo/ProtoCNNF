@@ -7,7 +7,10 @@ from mini_imagenet import MiniImageNet
 from samplers import CategoriesSampler
 from models.convnet import Convnet
 from models.resnet import ResNet
+from models.protonet import ProtoNet
 from utils import pprint, set_gpu, count_acc, Averager, euclidean_metric
+import torch.nn.functional as F
+import numpy as np
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -19,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument('--query', type=int, default=30)
     parser.add_argument('--ind-block', type=int, default=0)
     parser.add_argument('--cycles', type=int, default=0)
+    parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12', 'WRN28'])
     args = parser.parse_args()
     pprint(vars(args))
 
@@ -29,25 +33,23 @@ if __name__ == '__main__':
                                 args.batch, args.way, args.shot + args.query)
     loader = DataLoader(dataset, batch_sampler=sampler,
                         num_workers=8, pin_memory=False)
-    model = ResNet(ind_block = args.ind_block, cycles=args.cycles).cuda()
+    model = ProtoNet(args).cuda()
     model.load_state_dict(torch.load(args.load))
     model.eval()
 
     ave_acc = Averager()
+    label = torch.arange(args.way, dtype=torch.int16).repeat(args.query)
+
+    label = label.type(torch.LongTensor)
+
+    if torch.cuda.is_available():
+        label = label.cuda()
 
     for i, batch in enumerate(loader, 1):
         data, _ = [_.cuda() for _ in batch]
-        k = args.way * args.shot
-        data_shot, data_query = data[:k], data[k:]
 
-        x = model(data_shot)
-        x = x.reshape(args.shot, args.way, -1).mean(dim=0)
-        p = x
-
-        logits = euclidean_metric(model(data_query), p)
-
-        label = torch.arange(args.way).repeat(args.query)
-        label = label.type(torch.cuda.LongTensor)
+        logits = model(data)
+        loss = F.cross_entropy(logits, label)
 
         acc = count_acc(logits, label)
         ave_acc.add(acc)
