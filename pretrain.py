@@ -37,6 +37,9 @@ if __name__ == '__main__':
     pprint(vars(args))
     if args.ngpu == 1:
         set_gpu(args.gpu)
+    else:
+        set_gpu(", ".join([str(i) for i in range(args.ngpu)]))
+
     ensure_path(args.save_path)
 
     wandb.init(project=args.project, config=args)
