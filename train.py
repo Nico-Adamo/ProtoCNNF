@@ -58,6 +58,7 @@ if __name__ == '__main__':
     parser.add_argument('--augment', type=bool, default=False)
     parser.add_argument('--num-workers', type=int, default=8)
     parser.add_argument('--dataset', choices=['MiniImageNet'], default='MiniImageNet')
+    parser.add_argument('--temperature', type=int, default=1)
 
     parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--ind-block', type=int, default=1)
@@ -78,8 +79,8 @@ if __name__ == '__main__':
     if args.restore_from != "":
         print("Restoring from {}".format(args.restore_from))
         checkpoint = torch.load(args.restore_from)
-        pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model.state_dict()}
-        model.load_state_dict(pretrained_dict)
+        checkpoint = {k: v for k, v in checkpoint.items() if k in model.state_dict()}
+        model.load_state_dict(checkpoint)
 
     if args.multi_gpu:
         model.encoder = nn.DataParallel(model.encoder, dim=0)
@@ -105,7 +106,7 @@ if __name__ == '__main__':
     timer = Timer()
 
     wandb.watch(model, log_freq=10)
-    label, label_aux = prepare_label(args)
+    label = prepare_label(args)
 
     for epoch in range(1, args.max_epoch + 1):
         print("Epoch " + str(epoch))
