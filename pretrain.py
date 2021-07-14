@@ -61,6 +61,8 @@ if __name__ == '__main__':
     else:
         model = Classifier(ResNet(ind_block = args.ind_block, cycles = args.cycles), args).cuda()
 
+    criterion = torch.nn.CrossEntropyLoss()
+
     if torch.cuda.is_available():
         torch.backends.cudnn.benchmark = True
         if args.ngpu  > 1:
@@ -68,7 +70,6 @@ if __name__ == '__main__':
 
         model = model.cuda()
         criterion = criterion.cuda()
-
     initial_lr = args.lr
     optimizer = torch.optim.SGD(
           model.parameters(),
@@ -110,7 +111,7 @@ if __name__ == '__main__':
 
                 logits = model(data)
 
-                loss = F.cross_entropy(logits, label)
+                loss = criterion(logits, label)
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
 
