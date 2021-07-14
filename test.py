@@ -8,7 +8,7 @@ from samplers import CategoriesSampler
 from models.convnet import Convnet
 from models.resnet import ResNet
 from models.protonet import ProtoNet
-from utils import pprint, set_gpu, count_acc, Averager, euclidean_metric
+from utils import pprint, set_gpu, count_acc, Averager, euclidean_metric, get_dataloader
 import torch.nn.functional as F
 import numpy as np
 
@@ -22,17 +22,14 @@ if __name__ == '__main__':
     parser.add_argument('--query', type=int, default=30)
     parser.add_argument('--ind-block', type=int, default=0)
     parser.add_argument('--cycles', type=int, default=0)
+    parser.add_argument('--temperature', type=int, default=1)
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12', 'WRN28'])
     args = parser.parse_args()
     pprint(vars(args))
 
     set_gpu(args.gpu)
 
-    dataset = MiniImageNet('test')
-    sampler = CategoriesSampler(dataset.label,
-                                args.batch, args.way, args.shot + args.query)
-    loader = DataLoader(dataset, batch_sampler=sampler,
-                        num_workers=8, pin_memory=False)
+    test_loader = get_dataloader(args, test = True)
     model = ProtoNet(args).cuda()
     model.load_state_dict(torch.load(args.load))
     model.eval()
@@ -45,7 +42,7 @@ if __name__ == '__main__':
     if torch.cuda.is_available():
         label = label.cuda()
 
-    for i, batch in enumerate(loader, 1):
+    for i, batch in enumerate(test_loader, 1):
         data, _ = [_.cuda() for _ in batch]
 
         logits = model(data)

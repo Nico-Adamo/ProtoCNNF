@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     wandb.init(project=args.project, config=args)
 
-    train_loader, val_loader, test_loader = get_dataloader(args)
+    train_loader, val_loader = get_dataloader(args)
 
     model = ProtoNet(args).cuda()
 

@@ -76,11 +76,21 @@ def pprint(x):
 def l2_loss(pred, label):
     return ((pred - label)**2).sum() / len(pred) / 2
 
-def get_dataloader(args):
+def get_dataloader(args, test=False):
     if args.dataset == 'MiniImageNet':
         from mini_imagenet import MiniImageNet as Dataset
     else:
         raise ValueError('Non-supported Dataset.')
+    if test:
+        testset = Dataset('test', args)
+        test_sampler = CategoriesSampler(testset.label,
+                                2000, # args.num_eval_episodes,
+                                args.way, args.shot + args.query)
+        test_loader = DataLoader(dataset=testset,
+                                batch_sampler=test_sampler,
+                                num_workers=args.num_workers,
+                                pin_memory=True)
+        return test_loader
 
     num_device = torch.cuda.device_count()
     num_episodes = args.episodes_per_epoch*num_device if args.multi_gpu else args.episodes_per_epoch
@@ -107,13 +117,4 @@ def get_dataloader(args):
                             pin_memory=True)
 
 
-    testset = Dataset('test', args)
-    test_sampler = CategoriesSampler(testset.label,
-                            10000, # args.num_eval_episodes,
-                            args.way, args.shot + args.query)
-    test_loader = DataLoader(dataset=testset,
-                            batch_sampler=test_sampler,
-                            num_workers=args.num_workers,
-                            pin_memory=True)
-
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader
