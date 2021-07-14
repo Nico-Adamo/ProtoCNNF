@@ -53,11 +53,6 @@ def euclidean_metric(a, b):
     logits = -((a - b)**2).sum(dim=2)
     return logits
 
-def cosine_similarity(a, b, temperature=1):
-    """Returns cosine similarity between a and b, computed along dim"""
-    numerator = (a * b).sum(dim=1)
-    denominator = (a * a).sum(dim=1) * (b * b).sum(dim=1)
-    return numerator / torch.sqrt(denominator + 1e-7)
 
 class Timer():
 
@@ -122,10 +117,3 @@ def get_dataloader(args):
                             pin_memory=True)
 
     return train_loader, val_loader, test_loader
-
-if __name__ == '__main__':
-    a = torch.zeros(1, 2, 3, 4)
-    b = torch.zeros(1, 2, 3, 4)
-    print(cosine_similarity(a, b))
-    print(euclidean_metric(a, b))
-    print(cosine_similarity(a, b, temperature=2))

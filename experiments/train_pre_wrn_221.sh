@@ -16,8 +16,7 @@ python3 pretrain.py --max-epoch 100 \
 python3 train.py --max-epoch 200 \
                  --save-epoch 20 \
                  --shot 5 \
-                 --train-way 5 \
-                 --test-way 5 \
+                 --way 5 \
                  --lr 0.0001 \
                  --query 15 \
                  --restore-from "models-backbone-feedback/proto-feedback-21-wrn/max-acc.pth" \
