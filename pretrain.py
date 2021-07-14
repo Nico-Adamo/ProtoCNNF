@@ -35,8 +35,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     pprint(vars(args))
-
-    set_gpu(args.gpu)
+    if args.ngpu == 1:
+        set_gpu(args.gpu)
     ensure_path(args.save_path)
 
     wandb.init(project=args.project, config=args)
