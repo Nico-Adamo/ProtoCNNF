@@ -31,6 +31,7 @@ if __name__ == '__main__':
     parser.add_argument('--ind-block', type=int, default=1)
     parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--cycles', type=int, default = 2)
+    parser.add_argument('--ngpu', type=int, default = 4)
 
     args = parser.parse_args()
     pprint(vars(args))
@@ -56,6 +57,15 @@ if __name__ == '__main__':
         model = Classifier(WideResNet(ind_block = args.ind_block, ind_layer = args.ind_layer, cycles = args.cycles), args).cuda()
     else:
         model = Classifier(ResNet(ind_block = args.ind_block, cycles = args.cycles), args).cuda()
+
+    if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        if args.ngpu  > 1:
+            model.encoder = torch.nn.DataParallel(model.encoder, device_ids=list(range(args.ngpu)))
+
+        model = model.cuda()
+        criterion = criterion.cuda()
+
     initial_lr = args.lr
     optimizer = torch.optim.SGD(
           model.parameters(),
@@ -107,7 +117,6 @@ if __name__ == '__main__':
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
 
                 proto = None; logits = None; loss = None
 
