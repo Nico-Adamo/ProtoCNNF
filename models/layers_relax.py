@@ -47,10 +47,10 @@ class BatchNorm(nn.Module):
     def __init__(self, num_features, num_cycles):
         super(BatchNorm, self).__init__()
         self.num_features = num_features
-        self.bn = [nn.BatchNorm2d(num_features) for i in range(num_cycles + 1)]
+        self.bn = [nn.BatchNorm2d(num_features) for i in range(2 * num_cycles + 1)]
         self.cur_cycle = 0
 
-    def forward(self, x):
+    def forward(self, x, step='forward'):
         x = self.bn[self.cur_cycle](x)
         self.cur_cycle = (self.cur_cycle + 1) % len(self.bn)
         return x

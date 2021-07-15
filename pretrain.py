@@ -32,7 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--ind-block', type=int, default=1)
     parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--cycles', type=int, default = 2)
-    parser.add_argument('--ngpu', type=int, default = 4)
+    parser.add_argument('--ngpu', type=int, default = 0)
+    parser.add_argument('--wandb', action='store_true')
 
     args = parser.parse_args()
     pprint(vars(args))
