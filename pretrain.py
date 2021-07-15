@@ -97,6 +97,10 @@ if __name__ == '__main__':
 
     wandb.watch(model, log_freq=10)
 
+    # For validation
+    args.way = valset.num_class
+    args.shot = 1
+
     for epoch in range(1, args.max_epoch + 1):
         if epoch in args.schedule:
             initial_lr *= args.gamma
