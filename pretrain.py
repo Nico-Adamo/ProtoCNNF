@@ -16,6 +16,7 @@ from tqdm import tqdm
 from models.classifier import Classifier
 
 if __name__ == '__main__':
+    torch.manual_seed(0)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--max-epoch', type=int, default=100)
@@ -139,20 +140,16 @@ if __name__ == '__main__':
                         data, _ = [_.cuda() for _ in batch]
                         data_shot, data_query = data[:valset.num_class], data[valset.num_class:]
 
-                        proto = model.forward_proto(data_shot)
-                        proto = proto.reshape(1, args.query+1, -1).mean(dim=0)
+                        logits_dist = model.forward_proto(data_shot, data_query, valset.num_class)
 
                         label = torch.arange(valset.num_class).repeat(args.query)
                         label = label.type(torch.cuda.LongTensor)
 
-                        logits = euclidean_metric(model.forward_proto(data_query), proto)
-                        loss = F.cross_entropy(logits, label)
-                        acc = count_acc(logits, label)
+                        loss_dist = F.cross_entropy(logits_dist, label)
+                        acc = count_acc(logits_dist, label)
 
                         vl.add(loss.item())
                         va.add(acc)
-
-                        proto = None; logits = None; loss = None
 
                     vl = vl.item()
                     va = va.item()

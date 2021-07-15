@@ -40,6 +40,21 @@ class Prototype(nn.Module):
 
         return self.running_mean
 
+class BatchNorm(nn.Module):
+    """
+    Applies a batch normalization to the input, per cycle
+    """
+    def __init__(self, num_features, num_cycles):
+        super(BatchNorm, self).__init__()
+        self.num_features = num_features
+        self.bn = [nn.BatchNorm2d(num_features) for i in range(num_cycles + 1)]
+        self.cur_cycle = 0
+
+    def forward(self, x):
+        x = self.bn[self.cur_cycle](x)
+        self.cur_cycle = (self.cur_cycle + 1) % len(self.bn)
+        return x
+
 class GroupNorm(nn.Module):
     """
     Applies an group normalization (pytorch default) to the input.

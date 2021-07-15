@@ -13,6 +13,7 @@ from models.layers import DropBlock
 import matplotlib.pyplot as plt
 import pdb
 import shutil
+from utils import euclidean_metric
 
 class Classifier(nn.Module):
     def __init__(self, encoder, args):
@@ -30,6 +31,11 @@ class Classifier(nn.Module):
         out = self.fc(out)
         return out
 
-    def forward_proto(self, x, **kwargs):
-        out = self.encoder(x, **kwargs)
-        return out
+    def forward_proto(self, x, data_shot, data_query, way = None, **kwargs):
+        proto = self.encoder(data_shot,  **kwargs)
+        proto = proto.reshape(self.args.shot, way, -1).mean(dim=0)
+        query = self.encoder(data_query,  **kwargs)
+
+        logits_dist = euclidean_metric(query, proto)
+        logits_sim = torch.mm(query, F.normalize(proto, p=2, dim=-1).t())
+        return logits_dist, logits_sim

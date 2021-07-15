@@ -60,6 +60,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', choices=['MiniImageNet'], default='MiniImageNet')
     parser.add_argument('--temperature', type=int, default=1)
 
+    parser.add_argument('--inter-cycle-loss', type=bool, default=False)
     parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--ind-block', type=int, default=1)
     parser.add_argument('--cycles', type=int, default = 2)
@@ -121,11 +122,14 @@ if __name__ == '__main__':
                 data, _ = [_.cuda() for _ in batch]
 
                 cycle_logits = model(data, inter_cycle=True)
-                loss = 0
-                for j in range(args.cycles + 1):
-                    loss += F.cross_entropy(cycle_logits[j], label)
-
                 logits = cycle_logits[-1]
+                if args.inter_cycle_loss:
+                    loss = 0
+                    for j in range(args.cycles + 1):
+                        loss += F.cross_entropy(cycle_logits[j], label) / args.cycles
+                else:
+                    loss = F.cross_entropy(logits, label)
+
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
 
@@ -148,7 +152,7 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
-                logits = model(data)
+                logits = model(data, inter_cycle=False)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)

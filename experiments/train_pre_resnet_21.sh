@@ -5,7 +5,7 @@ python3 pretrain.py --max-epoch 100 \
                  --query 15 \
                  --lr 0.002 \
                  --save-path "models-backbone-feedback/proto-feedback-21" \
-                 --gpu 1 \
+                 --gpu 2 \
                  --model "ResNet12" \
                  --project "CNNF-Prototype-Pretrain" \
                  --ind-block 2 \
@@ -20,7 +20,7 @@ python3 train.py --max-epoch 200 \
                  --query 15 \
                  --restore-from "models-backbone-feedback/proto-feedback-21/max-acc.pth" \
                  --save-path "models/proto-feedback-21-5shot" \
-                 --gpu 1 \
+                 --gpu 2 \
                  --ind-block 2 \
                  --cycles 1 \
                  --model "ResNet12" \

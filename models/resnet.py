@@ -28,15 +28,14 @@ class BasicBlock(nn.Module):
     """Basic ResNet block."""
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, drop_rate=0.0, drop_block=False, block_size=1, res_param = 0.1):
+    def __init__(self, inplanes, planes, stride=1, drop_rate=0.0, drop_block=False, block_size=1, res_param = 0.1, cycles = 0):
         super(BasicBlock, self).__init__()
-        self.ln1 = layers.GroupNorm(8, planes)
+        self.ln1 = layers.BatchNorm(planes, cycles = cycles)
         # self.relu1 = layers.resReLU(res_param)
         # self.ln1 = nn.BatchNorm2d(planes)
         self.relu1 = layers.leakyReLU(0.1)
-
         self.conv1 = res_conv3x3(inplanes, planes)
-        self.ln2 = layers.GroupNorm(8, planes)
+        self.ln2 = layers.BatchNorm(planes, cycles = cycles)
         # self.relu2 = layers.resReLU(res_param)
         # self.ln2 = nn.BatchNorm2d(planes)
         self.relu2 = layers.leakyReLU(0.1)
@@ -44,8 +43,8 @@ class BasicBlock(nn.Module):
         self.conv2 = res_conv3x3(planes, planes)
         self.conv3 = res_conv3x3(planes, planes)
         # self.relu3 = layers.resReLU(res_param)
-        self.ln3 = layers.GroupNorm(8, planes)
-        self.ln4 = layers.GroupNorm(8, planes)
+        self.ln3 = layers.BatchNorm(planes, cycles = cycles)
+        self.ln4 = layers.BatchNorm(planes, cycles = cycles)
         # self.ln3 = nn.BatchNorm2d(planes)
         self.relu3 = layers.leakyReLU(0.1)
 
@@ -62,7 +61,6 @@ class BasicBlock(nn.Module):
     def forward(self, x, step='forward'):
         if ('forward' in step):
             residual = x
-            self.num_batches_tracked += 1
             out = self.conv1(x)
             out = self.ln1(out)
             out = self.relu1(out)
@@ -129,10 +127,10 @@ class ResNet(nn.Module):
         self.inplanes = 3
         super(ResNet, self).__init__()
 
-        self.layer1 = block(self.inplanes, 64, stride=2, drop_rate=drop_rate, res_param=0.1)
-        self.layer2 = block(64, 160, stride=2, drop_rate=drop_rate)
-        self.layer3 = block(160, 320, stride=2, drop_rate=drop_rate, drop_block=True, block_size=dropblock_size)
-        self.layer4 = block(320, 640, stride=2, drop_rate=drop_rate, drop_block=True, block_size=dropblock_size)
+        self.layer1 = block(self.inplanes, 64, stride=2, drop_rate=drop_rate, res_param=0.1, cycles = cycles)
+        self.layer2 = block(64, 160, stride=2, drop_rate=drop_rate, cycles = cycles)
+        self.layer3 = block(160, 320, stride=2, drop_rate=drop_rate, drop_block=True, block_size=dropblock_size, cycles = cycles)
+        self.layer4 = block(320, 640, stride=2, drop_rate=drop_rate, drop_block=True, block_size=dropblock_size, cycles = cycles)
         self.layer = [self.layer1, self.layer2, self.layer3, self.layer4]
         if avg_pool:
             self.avgpool = layers.AvgPool2d(5, scale_factor=5, stride=1)
@@ -271,6 +269,11 @@ class ResNet(nn.Module):
         proto, orig_feature = self.forward_cycle(x, first=True, inter=True)
         cycle_proto = [proto]
         ff_prev = orig_feature
+
+        self.layer1.num_batches_tracked += 1
+        self.layer2.num_batches_tracked += 1
+        self.layer3.num_batches_tracked += 1
+        self.layer4.num_batches_tracked += 1
 
         for i_cycle in range(self.cycles):
             # feedback
