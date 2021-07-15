@@ -30,12 +30,12 @@ class BasicBlock(nn.Module):
 
     def __init__(self, inplanes, planes, stride=1, drop_rate=0.0, drop_block=False, block_size=1, res_param = 0.1, cycles = 0):
         super(BasicBlock, self).__init__()
-        self.ln1 = layers.BatchNorm(planes, cycles = cycles)
+        self.ln1 = layers.BatchNorm(planes, cycles)
         # self.relu1 = layers.resReLU(res_param)
         # self.ln1 = nn.BatchNorm2d(planes)
         self.relu1 = layers.leakyReLU(0.1)
         self.conv1 = res_conv3x3(inplanes, planes)
-        self.ln2 = layers.BatchNorm(planes, cycles = cycles)
+        self.ln2 = layers.BatchNorm(planes, cycles)
         # self.relu2 = layers.resReLU(res_param)
         # self.ln2 = nn.BatchNorm2d(planes)
         self.relu2 = layers.leakyReLU(0.1)
@@ -43,8 +43,8 @@ class BasicBlock(nn.Module):
         self.conv2 = res_conv3x3(planes, planes)
         self.conv3 = res_conv3x3(planes, planes)
         # self.relu3 = layers.resReLU(res_param)
-        self.ln3 = layers.BatchNorm(planes, cycles = cycles)
-        self.ln4 = layers.BatchNorm(planes, cycles = cycles)
+        self.ln3 = layers.BatchNorm(planes, cycles)
+        self.ln4 = layers.BatchNorm(planes, cycles)
         # self.ln3 = nn.BatchNorm2d(planes)
         self.relu3 = layers.leakyReLU(0.1)
 
