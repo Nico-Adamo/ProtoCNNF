@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--ind-block', type=int, default=1)
     parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--cycles', type=int, default = 2)
-    parser.add_argument('--ngpu', type=int, default = 0)
+    parser.add_argument('--ngpu', type=int, default = 1)
     parser.add_argument('--wandb', action='store_true')
 
     args = parser.parse_args()
@@ -43,8 +43,10 @@ if __name__ == '__main__':
         set_gpu(", ".join([str(i) for i in range(args.ngpu)]))
 
     ensure_path(args.save_path)
-
-    wandb.init(project=args.project, config=args)
+    if args.wandb:
+        wandb.init(project=args.project, config=args)
+    else:
+        wandb.init(project=args.project, config=args, mode="disabled")
 
     trainset = MiniImageNet('train', augment=True)
     train_loader = DataLoader(dataset=trainset, batch_size = 16, shuffle=True,
