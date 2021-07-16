@@ -60,7 +60,7 @@ class ProtoNet(nn.Module):
 
         # query: (num_batch, num_query, num_proto, num_emb)
         # proto: (num_batch, num_proto, num_emb)
-        if True: # self.args.use_euclidean:
+        if not self.args.use_cosine_similarity: # Use euclidean distance:
             query = query.view(-1, emb_dim).unsqueeze(1) # (Nbatch*Nq*Nw, 1, d)
             proto = proto.unsqueeze(1).expand(num_batch, num_query, num_proto, emb_dim)
             proto = proto.contiguous().view(num_batch*num_query, num_proto, emb_dim) # (Nbatch x Nq, Nk, d)

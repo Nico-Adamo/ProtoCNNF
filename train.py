@@ -54,15 +54,17 @@ if __name__ == '__main__':
     parser.add_argument('--episodes-per-epoch', type=int, default=100)
     parser.add_argument('--num-eval-episodes', type=int, default=200)
 
-    parser.add_argument('--multi-gpu', type=bool, default=False)
-    parser.add_argument('--augment', type=bool, default=False)
+    parser.add_argument('--multi-gpu', action='store-true', default=False)
+    parser.add_argument('--augment', action='store-true', default=False)
     parser.add_argument('--num-workers', type=int, default=8)
     parser.add_argument('--dataset', choices=['MiniImageNet'], default='MiniImageNet')
     parser.add_argument('--temperature', type=int, default=1)
 
-    parser.add_argument('--inter-cycle-loss', type=bool, default=False)
+    parser.add_argument('--inter-cycle-loss', action='store_true', default=False)
     parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--ind-block', type=int, default=1)
+    parser.add_argument('--use-cosine-similarity', action='store-true', default=False)
+
     parser.add_argument('--cycles', type=int, default = 2)
 
     args = parser.parse_args()

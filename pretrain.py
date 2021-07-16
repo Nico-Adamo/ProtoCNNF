@@ -88,10 +88,13 @@ if __name__ == '__main__':
     trlog = {}
     trlog['args'] = vars(args)
     trlog['train_loss'] = []
-    trlog['val_loss'] = []
+    trlog['val_loss_dist'] = []
+    trlog['val_loss_sim'] = []
     trlog['train_acc'] = []
-    trlog['val_acc'] = []
-    trlog['max_acc'] = 0.0
+    trlog['val_acc_dist'] = []
+    trlog['max_acc_dist'] = 0.0
+    trlog['val_acc_sim'] = []
+    trlog['max_acc_sim'] = 0.0
 
     timer = Timer()
 
@@ -130,8 +133,6 @@ if __name__ == '__main__':
                 loss.backward()
                 optimizer.step()
 
-                proto = None; logits = None; loss = None
-
             tl = tl.item()
             ta = ta.item()
 
@@ -139,37 +140,53 @@ if __name__ == '__main__':
             if epoch > 100 or (epoch-1) % 5 == 0:
                 model.eval()
 
-                vl = Averager()
-                va = Averager()
+                vl_dist = Averager()
+                va_dist = Averager()
+                vl_sim = Averager()
+                va_sim = Averager()
+
                 with torch.no_grad():
                     # Test few shot performance
                     for i, batch in enumerate(val_loader, 1):
                         data, _ = [_.cuda() for _ in batch]
                         data_shot, data_query = data[:valset.num_class], data[valset.num_class:]
 
-                        logits_dist = model.forward_proto(data_shot, data_query, valset.num_class)
+                        logits_dist, logits_sim = model.forward_proto(data_shot, data_query, valset.num_class)
 
                         label = torch.arange(valset.num_class).repeat(args.query)
                         label = label.type(torch.cuda.LongTensor)
 
                         loss_dist = F.cross_entropy(logits_dist, label)
-                        acc = count_acc(logits_dist, label)
+                        loss_sim = F.cross_entropy(logits_sim, label)
 
-                        vl.add(loss.item())
-                        va.add(acc)
+                        acc_dist = count_acc(logits_dist, label)
+                        acc_sim = count_acc(logits_sim, label)
 
-                    vl = vl.item()
-                    va = va.item()
-                print('Epoch {}, few-shot val, loss={:.4f} acc={:.4f}'.format(epoch, vl, va))
-                wandb.log({"test_loss": vl, "test_acc": va}, step=epoch)
-                if va > trlog['max_acc']:
-                    trlog['max_acc'] = va
-                    save_model('max-acc')
+                        vl_dist.add(loss_dist.item())
+                        va_dist.add(acc_sim)
+                        vl_sim.add(loss_sim.item())
+                        va_sim.add(acc_sim)
+
+                    vl_dist = vl_dist.item()
+                    vl_sim = vl_sim.item()
+                    va_dist = va_dist.item()
+                    va_sim = va_sim.item()
+
+                print('Epoch {}, few-shot val, loss_dist={:.4f} acc_dist={:.4f}, acc_sim={:.4f}'.format(epoch, vl_dist, va_dist, va_sim))
+                wandb.log({"test_loss_dist": vl_dist, "test_acc_dist": va_dist, "test_loss_sim": vl_sim, "test_acc_sim": va_sim}, step=epoch)
+                if va_dist > trlog['max_acc_dist']:
+                    trlog['max_acc_dist'] = va_dist
+                    save_model('max-acc-dist')
+                if va_sim > trlog['max_acc_sim']:
+                    trlog['max_acc'] = va_sim
+                    save_model('max-acc-sim')
 
                 trlog['train_loss'].append(tl)
                 trlog['train_acc'].append(ta)
-                trlog['val_loss'].append(vl)
-                trlog['val_acc'].append(va)
+                trlog['val_loss_dist'].append(vl_dist)
+                trlog['val_acc_dist'].append(va_dist)
+                trlog['val_loss_sim'].append(vl_dist)
+                trlog['val_acc_sim'].append(va_dist)
 
                 torch.save(trlog, osp.join(args.save_path, 'trlog'))
 
