@@ -163,7 +163,7 @@ if __name__ == '__main__':
                         acc_sim = count_acc(logits_sim, label)
 
                         vl_dist.add(loss_dist.item())
-                        va_dist.add(acc_sim)
+                        va_dist.add(acc_dist)
                         vl_sim.add(loss_sim.item())
                         va_sim.add(acc_sim)
 
