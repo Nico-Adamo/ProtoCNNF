@@ -26,6 +26,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12', 'WRN28'])
     parser.add_argument('--dataset', choices=['MiniImageNet'], default='MiniImageNet')
     parser.add_argument('--num-workers', type=int, default=8)
+    parser.add_argument('--use-cosine-similarity', action='store_true', default=False)
 
     args = parser.parse_args()
     pprint(vars(args))
@@ -44,15 +45,15 @@ if __name__ == '__main__':
 
     if torch.cuda.is_available():
         label = label.cuda()
+    with torch.no_grad():
+        for i, batch in enumerate(test_loader, 1):
+            data, _ = [_.cuda() for _ in batch]
 
-    for i, batch in enumerate(test_loader, 1):
-        data, _ = [_.cuda() for _ in batch]
+            logits = model(data, inter_cycle=False)
+            loss = F.cross_entropy(logits, label)
 
-        logits = model(data)
-        loss = F.cross_entropy(logits, label)
+            acc = count_acc(logits, label)
+            ave_acc.add(acc)
+            print('batch {}: {:.2f}({:.2f})'.format(i, ave_acc.item() * 100, acc * 100))
 
-        acc = count_acc(logits, label)
-        ave_acc.add(acc)
-        print('batch {}: {:.2f}({:.2f})'.format(i, ave_acc.item() * 100, acc * 100))
-
-        x = None; p = None; logits = None
+            x = None; p = None; logits = None
