@@ -181,9 +181,10 @@ if __name__ == '__main__':
 
                         acc = count_acc(logits, label)
                         ave_acc.add(acc)
+                wandb.log({"eval_acc": ave_acc.item()}, step=epoch - 1)
 
             print('Epoch {}, val, loss={:.4f} acc={:.4f}'.format(epoch, vl, va))
-            wandb.log({"train_loss": tl, "train_acc": ta, "test_loss": vl, "test_acc": va, "eval_acc": ave_acc.item()})
+            wandb.log({"train_loss": tl, "train_acc": ta, "test_loss": vl, "test_acc": va})
 
             if va > trlog['max_acc']:
                 trlog['max_acc'] = va
