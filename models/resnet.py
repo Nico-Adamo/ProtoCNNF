@@ -9,8 +9,8 @@ import numpy as np
 import math
 import torchvision
 from torchvision import datasets, transforms
-from layers import DropBlock
-import layers_relax as layers
+from models.layers import DropBlock
+import models.layers_relax as layers
 import matplotlib.pyplot as p
 import pdb
 import shutil
@@ -158,7 +158,7 @@ class ResNet(nn.Module):
                 x = self.avgpool(x, step='backward')
 
         if (self.ind_block==0):
-            blocks = []
+            blocks = [x]
             if ('forward' in step):
                 orig_feature = x
                 for idx in range(4):

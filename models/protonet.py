@@ -24,22 +24,30 @@ class ProtoNet(nn.Module):
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
                     torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + args.query))).long().view(1, args.query, args.way))
 
-    def forward(self, x, get_feature=False, inter_cycle=False):
+    def forward(self, x, get_feature=False, inter_cycle=False, inter_layer=False):
         if get_feature:
             return self.encoder(x)
         else:
             # feature extraction
             x = x.squeeze(0)
-            cycle_instance_embs = self.encoder(x, inter_cycle=True)
+            cycle_instance_embs = self.encoder(x, inter_cycle=True, inter_layer=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
+                                                                                      # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             cycle_logits = []
             for cycle in range(self.args.cycles + 1):
-                instance_embs = cycle_instance_embs[cycle]
+                instance_embs = cycle_instance_embs[cycle][-1]
                 num_inst = instance_embs.shape[0]
                 # split support query set for few-shot data
                 support_idx, query_idx = self.split_instances(x)
 
-                logits = self._forward(instance_embs, support_idx, query_idx)
+                if inter_layer:
+                    cycle_logits = []
+                    # Get prototypical logits for each layer
+                    for i in range(6 - args.ind_block):
+                        cycle_logits.append(self._forward(cycle_instance_embs[cycle][i], support_idx, query_idx))
+                else:
+                    logits = self._forward(instance_embs, support_idx, query_idx)
                 cycle_logits.append(logits)
+
             if inter_cycle:
                 return cycle_logits
             else:
@@ -63,7 +71,7 @@ class ProtoNet(nn.Module):
 
         # Diminish cross-class bias by adding the difference in mean embedding between support and query to each query embedding
         if self.args.bias_shift:
-            shift_embedding = (proto.mean(dim=1) - query.view(num_batch, num_query * num_proto, -1).mean(dim=1) ).unsqueeze(1) # (num_batch, 1, num_emb)
+            shift_embedding = (proto.mean(dim=1) - query.view(num_batch, num_query, -1).mean(dim=1) ).unsqueeze(1) # (num_batch, 1, num_emb)
             query = query + shift_embedding
         if not self.args.use_cosine_similarity: # Use euclidean distance:
             query = query.view(-1, emb_dim).unsqueeze(1) # (Nbatch*Nq*Nw, 1, d)

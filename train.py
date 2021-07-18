@@ -62,6 +62,8 @@ if __name__ == '__main__':
     parser.add_argument('--temperature', type=int, default=1)
 
     parser.add_argument('--inter-cycle-loss', action='store_true', default=False)
+    parser.add_argument('--inter-layer-loss', action='store_true', default=False)
+
     parser.add_argument('--bias-shift', action='store_true', default=False)
     parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--ind-block', type=int, default=1)
@@ -125,13 +127,19 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, _ = [_.cuda() for _ in batch]
 
-                cycle_logits = model(data, inter_cycle=True)
-                logits = cycle_logits[-1]
-                if args.inter_cycle_loss:
+                if args.inter_layer_loss:
+                    cycle_logits = model(data, inter_cycle = True, inter_layer = True)
                     loss = 0
                     for j in range(args.cycles + 1):
-                        loss += F.cross_entropy(cycle_logits[j], label) / args.cycles
+                        for k in range(6 - args.ind_block):
+                            loss += F.cross_entropy(cycle_logits[j][k], label) / ((args.cycles + 1) * (6 - args.ind_block))
+                elif args.inter_cycle_loss:
+                    cycle_logits = model(data, inter_cycle=True)
+                    loss = 0
+                    for j in range(args.cycles + 1):
+                        loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
                 else:
+                    cycle_logits = model(data)
                     loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
