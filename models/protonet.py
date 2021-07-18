@@ -82,9 +82,11 @@ class ProtoNet(nn.Module):
         else: # cosine similarity: more memory efficient
             proto = F.normalize(proto, dim=-1) # normalize for cosine distance
             query = query.view(num_batch, -1, emb_dim) # (Nbatch,  Nq*Nw, d)
+            query = F.normalize(query, dim=-1)
 
             # (num_batch,  num_emb, num_proto) * (num_batch, num_query*num_proto, num_emb) -> (num_batch, num_query*num_proto, num_proto)
-            logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature * (640 / emb_dim) # TODO: magic number
+            # (Nb, Nq*Np, d) * (Nb, d, Np) -> (Nb, Nq*Nw, Np)
+            logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature # TODO: magic number
             logits = logits.view(-1, num_proto)
 
         return logits
