@@ -3,6 +3,8 @@ from models.protonet import ProtoNet
 import torch
 from argparse import Namespace
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
+from samplers import CategoriesSampler
 
 # FOR DEBUG
 if __name__ == '__main__':
@@ -18,12 +20,22 @@ if __name__ == '__main__':
         model = "ResNet12",
         bias_shift = True
     )
-    train_loader = MiniImageNet('train')
+    trainset = MiniImageNet('train')
+    train_sampler = CategoriesSampler(trainset.label,
+                                      100,
+                                      args.way,
+                                      args.shot + args.query)
+
+    train_loader = DataLoader(dataset=trainset,
+                                  num_workers=8,
+                                  batch_sampler=train_sampler,
+                                  pin_memory=True)
+
     for i, batch in enumerate(train_loader, 1):
         img_batch = batch
         if i == 1:
             break
-    data, _ = [_.cuda() for _ in batch]
+    data, _ = [_.cuda() for _ in img_batch]
 
     model = ProtoNet(args).cuda()
     cycle_logits = model(data, inter_cycle = True, inter_layer = True)
