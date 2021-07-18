@@ -61,6 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--temperature', type=int, default=1)
 
     parser.add_argument('--inter-cycle-loss', action='store_true', default=False)
+    parser.add_argument('--bias-shift', action='store_true', default=False)
     parser.add_argument('--ind-layer', type=int, default=0)
     parser.add_argument('--ind-block', type=int, default=1)
     parser.add_argument('--use-cosine-similarity', action='store_true', default=False)
