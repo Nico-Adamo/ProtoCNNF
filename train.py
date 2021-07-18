@@ -33,6 +33,7 @@ def save_model(name):
     torch.save(model.state_dict(), osp.join(args.save_path, name + '.pth'))
 
 if __name__ == '__main__':
+    torch.manual_seed(0)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--max-epoch', type=int, default=200)
@@ -169,7 +170,7 @@ if __name__ == '__main__':
             vl = vl.item()
             va = va.item()
 
-            if epoch - 1 % 20 == 0:
+            if (epoch - 1) % 20 == 0:
                 ave_acc = Averager()
 
                 with torch.no_grad():
