@@ -69,7 +69,6 @@ class ProtoNet(nn.Module):
 
         # query: (num_batch, num_query, num_proto, num_emb)
         # proto: (num_batch, num_proto, num_emb)
-
         # Diminish cross-class bias by adding the difference in mean embedding between support and query to each query embedding
         if self.args.bias_shift:
             shift_embedding = (proto.mean(dim=1) - query.view(num_batch, num_query, -1).mean(dim=1) ).unsqueeze(1) # (num_batch, 1, num_emb)
@@ -85,7 +84,7 @@ class ProtoNet(nn.Module):
             query = query.view(num_batch, -1, emb_dim) # (Nbatch,  Nq*Nw, d)
 
             # (num_batch,  num_emb, num_proto) * (num_batch, num_query*num_proto, num_emb) -> (num_batch, num_query*num_proto, num_proto)
-            logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature
+            logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature * (640 / emb_dim) # TODO: magic number
             logits = logits.view(-1, num_proto)
 
         return logits
