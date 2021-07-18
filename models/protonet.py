@@ -71,8 +71,8 @@ class ProtoNet(nn.Module):
         # proto: (num_batch, num_proto, num_emb)
         # Diminish cross-class bias by adding the difference in mean embedding between support and query to each query embedding
         if self.args.bias_shift:
-            shift_embedding = (proto.mean(dim=1) - query.view(num_batch, num_query, -1).mean(dim=1) ).unsqueeze(1) # (num_batch, 1, num_emb)
-            query = query + shift_embedding
+            query = query - (query.view(num_batch, num_query, -1).mean(dim=1).unsqueeze(1))
+            proto = proto - proto.mean(dim=1).unsqueeze(1)
         if not self.args.use_cosine_similarity: # Use euclidean distance:
             query = query.view(-1, emb_dim).unsqueeze(1) # (Nbatch*Nq*Nw, 1, d)
             proto = proto.unsqueeze(1).expand(num_batch, num_query, num_proto, emb_dim)
@@ -82,7 +82,6 @@ class ProtoNet(nn.Module):
         else: # cosine similarity: more memory efficient
             proto = F.normalize(proto, dim=-1) # normalize for cosine distance
             query = query.view(num_batch, -1, emb_dim) # (Nbatch,  Nq*Nw, d)
-            query = F.normalize(query, dim=-1)
 
             # (num_batch,  num_emb, num_proto) * (num_batch, num_query*num_proto, num_emb) -> (num_batch, num_query*num_proto, num_proto)
             # (Nb, Nq*Np, d) * (Nb, d, Np) -> (Nb, Nq*Nw, Np)
