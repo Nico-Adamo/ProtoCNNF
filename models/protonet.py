@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from argparse import Namespace
 
 class ProtoNet(nn.Module):
     def __init__(self, args):
@@ -31,7 +32,7 @@ class ProtoNet(nn.Module):
             # feature extraction
             x = x.squeeze(0)
             cycle_instance_embs = self.encoder(x, inter_cycle=True, inter_layer=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
-                                                                                      # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block + 1::]
+                                                                                      # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             cycle_logits = []
             for cycle in range(self.args.cycles + 1):
                 instance_embs = cycle_instance_embs[cycle][-1]
@@ -88,3 +89,30 @@ class ProtoNet(nn.Module):
             logits = logits.view(-1, num_proto)
 
         return logits
+
+if __name__ == '__main__':
+    rand_img_batch = torch.randn(6,3,84,84).cuda()
+    args = Namespace(
+        use_cosine_similarity = True,
+        ind_block = 0,
+        cycles = 1,
+        ind_layer = 2,
+        temperature = 1.0,
+        query = 5,
+        shot = 1,
+        way = 2,
+        model = "ResNet12",
+        bias_shift = True
+    )
+
+    model = ProtoNet(args).cuda()
+    cycle_logits = model(rand_img_batch, inter_cycle = True, inter_layer = True)
+    loss = 0
+
+    label = torch.arange(args.way, dtype=torch.int16).repeat(args.query)
+    label = label.type(torch.LongTensor).cuda()
+    print(label)
+
+    for j in range(args.cycles + 1):
+        for k in range(6 - args.ind_block):
+            loss += F.cross_entropy(cycle_logits[j][k], label) / ((args.cycles + 1) * (6 - args.ind_block))
