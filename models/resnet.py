@@ -237,8 +237,10 @@ class ResNet(nn.Module):
 
         if (inter==False):
             return x
-        elif (inter==True):
+        elif (inter==True and first==True):
             return x, orig_feature, blocks
+        elif (inter==True and first==False):
+            return x, blocks
 
     def reset(self):
         """
@@ -292,7 +294,7 @@ class ResNet(nn.Module):
             recon = self.forward_cycle(proto, step='backward')
             # feedforward
             ff_current = ff_prev + self.res_param * (recon - ff_prev)
-            proto, _, blocks = self.forward_cycle(ff_current, first=False, inter=True)
+            proto, blocks = self.forward_cycle(ff_current, first=False, inter=True)
             if inter_layer:
                 cycle_proto.append(blocks)
             else:
