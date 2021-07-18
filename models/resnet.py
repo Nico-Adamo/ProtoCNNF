@@ -158,7 +158,7 @@ class ResNet(nn.Module):
                 x = self.avgpool(x, step='backward')
 
         if (self.ind_block==0):
-            blocks = [x]
+            blocks = [x.view(x.size(0), -1)]
             if ('forward' in step):
                 orig_feature = x
                 for idx in range(4):

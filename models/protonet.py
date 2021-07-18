@@ -90,29 +90,3 @@ class ProtoNet(nn.Module):
 
         return logits
 
-if __name__ == '__main__':
-    rand_img_batch = torch.randn(6,3,84,84).cuda()
-    args = Namespace(
-        use_cosine_similarity = True,
-        ind_block = 0,
-        cycles = 1,
-        ind_layer = 2,
-        temperature = 1.0,
-        query = 5,
-        shot = 1,
-        way = 2,
-        model = "ResNet12",
-        bias_shift = True
-    )
-
-    model = ProtoNet(args).cuda()
-    cycle_logits = model(rand_img_batch, inter_cycle = True, inter_layer = True)
-    loss = 0
-
-    label = torch.arange(args.way, dtype=torch.int16).repeat(args.query)
-    label = label.type(torch.LongTensor).cuda()
-    print(label)
-
-    for j in range(args.cycles + 1):
-        for k in range(6 - args.ind_block):
-            loss += F.cross_entropy(cycle_logits[j][k], label) / ((args.cycles + 1) * (6 - args.ind_block))
