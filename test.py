@@ -27,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', choices=['MiniImageNet'], default='MiniImageNet')
     parser.add_argument('--num-workers', type=int, default=8)
     parser.add_argument('--use-cosine-similarity', action='store_true', default=False)
+    parser.add_argument('--bias-shift', action='store_true', default=False)
 
     args = parser.parse_args()
     pprint(vars(args))
