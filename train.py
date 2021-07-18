@@ -133,13 +133,15 @@ if __name__ == '__main__':
                     for j in range(args.cycles + 1):
                         for k in range(6 - args.ind_block):
                             loss += F.cross_entropy(cycle_logits[j][k], label) / ((args.cycles + 1) * (6 - args.ind_block))
+                    logits = cycle_logits[-1][-1]
                 elif args.inter_cycle_loss:
                     cycle_logits = model(data, inter_cycle=True)
                     loss = 0
                     for j in range(args.cycles + 1):
                         loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
+                    logits = cycle_logits[-1]
                 else:
-                    cycle_logits = model(data)
+                    logits = model(data)
                     loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
