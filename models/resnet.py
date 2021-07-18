@@ -172,7 +172,7 @@ class ResNet(nn.Module):
                         x = self.layer3(x, step='forward')
                     elif (idx==3):
                         x = self.layer4(x, step='forward')
-                    blocks.append(x)
+                    blocks.append(x.view(x.size(0), -1))
             elif ('backward' in step):
                 for idx in range(3, -1, -1):
                     if (idx == 0):
@@ -205,7 +205,7 @@ class ResNet(nn.Module):
                             if ((idx+1)==self.ind_block):
                                 orig_feature = x
                             if ((idx+1) >= self.ind_block):
-                                blocks.append(x)
+                                blocks.append(x.view(x.size(0), -1))
                 elif (first==False):
                     for idx in range(self.ind_block, 4):
                         if (idx == 0):
@@ -216,7 +216,7 @@ class ResNet(nn.Module):
                             x = self.layer3(x, step='forward')
                         elif (idx == 3):
                             x = self.layer4(x, step='forward')
-                        blocks.append(x)
+                        blocks.append(x.view(x.size(0), -1))
             elif ('backward' in step):
                 for idx in range(3, self.ind_block - 1, -1):
                     if (idx == 0):

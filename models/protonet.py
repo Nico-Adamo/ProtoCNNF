@@ -42,7 +42,7 @@ class ProtoNet(nn.Module):
                 if inter_layer:
                     cycle_logits = []
                     # Get prototypical logits for each layer
-                    for i in range(6 - args.ind_block):
+                    for i in range(6 - self.args.ind_block):
                         cycle_logits.append(self._forward(cycle_instance_embs[cycle][i], support_idx, query_idx))
                 else:
                     logits = self._forward(instance_embs, support_idx, query_idx)
