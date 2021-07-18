@@ -1,6 +1,9 @@
 from mini_imagenet import MiniImageNet
 from models.protonet import ProtoNet
 import torch
+from argparse import Namespace
+import torch.nn.functional as F
+
 # FOR DEBUG
 if __name__ == '__main__':
     args = Namespace(
@@ -20,9 +23,10 @@ if __name__ == '__main__':
         img_batch = batch
         if i == 1:
             break
+    data, _ = [_.cuda() for _ in batch]
 
     model = ProtoNet(args).cuda()
-    cycle_logits = model(img_batch, inter_cycle = True, inter_layer = True)
+    cycle_logits = model(data, inter_cycle = True, inter_layer = True)
     loss = 0
 
     label = torch.arange(args.way, dtype=torch.int16).repeat(args.query)
