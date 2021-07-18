@@ -31,7 +31,7 @@ class ProtoNet(nn.Module):
             # feature extraction
             x = x.squeeze(0)
             cycle_instance_embs = self.encoder(x, inter_cycle=True, inter_layer=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
-                                                                                      # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
+                                                                                      # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block + 1::]
             cycle_logits = []
             for cycle in range(self.args.cycles + 1):
                 instance_embs = cycle_instance_embs[cycle][-1]
@@ -40,10 +40,10 @@ class ProtoNet(nn.Module):
                 support_idx, query_idx = self.split_instances(x)
 
                 if inter_layer:
-                    cycle_logits = []
+                    logits = []
                     # Get prototypical logits for each layer
                     for i in range(6 - self.args.ind_block):
-                        cycle_logits.append(self._forward(cycle_instance_embs[cycle][i], support_idx, query_idx))
+                        logits.append(self._forward(cycle_instance_embs[cycle][i], support_idx, query_idx))
                 else:
                     logits = self._forward(instance_embs, support_idx, query_idx)
                 cycle_logits.append(logits)

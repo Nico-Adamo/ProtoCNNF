@@ -207,6 +207,7 @@ class ResNet(nn.Module):
                             if ((idx+1) >= self.ind_block):
                                 blocks.append(x.view(x.size(0), -1))
                 elif (first==False):
+                    blocks.append(x.view(x.size(0), -1))
                     for idx in range(self.ind_block, 4):
                         if (idx == 0):
                             x = self.layer1(x, step='forward')
