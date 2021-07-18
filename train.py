@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     wandb.init(project=args.project, config=args)
 
-    train_loader, val_loader = get_dataloader(args)
+    train_loader, val_loader, test_loader = get_dataloader(args)
 
     model = ProtoNet(args).cuda()
 
@@ -168,8 +168,22 @@ if __name__ == '__main__':
 
             vl = vl.item()
             va = va.item()
+
+            if epoch - 1 % 20 == 0:
+                ave_acc = Averager()
+
+                with torch.no_grad():
+                    for i, batch in enumerate(test_loader, 1):
+                        data, _ = [_.cuda() for _ in batch]
+
+                        logits = model(data, inter_cycle=False)
+                        loss = F.cross_entropy(logits, label)
+
+                        acc = count_acc(logits, label)
+                        ave_acc.add(acc)
+
             print('Epoch {}, val, loss={:.4f} acc={:.4f}'.format(epoch, vl, va))
-            wandb.log({"train_loss": tl, "train_acc": ta, "test_loss": vl, "test_acc": va})
+            wandb.log({"train_loss": tl, "train_acc": ta, "test_loss": vl, "test_acc": va, "eval_acc": ave_acc.item()})
 
             if va > trlog['max_acc']:
                 trlog['max_acc'] = va
