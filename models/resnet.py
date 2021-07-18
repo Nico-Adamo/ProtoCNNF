@@ -9,8 +9,8 @@ import numpy as np
 import math
 import torchvision
 from torchvision import datasets, transforms
-from models.layers import DropBlock
-import models.layers_relax as layers
+from layers import DropBlock
+import layers_relax as layers
 import matplotlib.pyplot as p
 import pdb
 import shutil
@@ -158,6 +158,7 @@ class ResNet(nn.Module):
                 x = self.avgpool(x, step='backward')
 
         if (self.ind_block==0):
+            blocks = []
             if ('forward' in step):
                 orig_feature = x
                 for idx in range(4):
@@ -171,6 +172,7 @@ class ResNet(nn.Module):
                         x = self.layer3(x, step='forward')
                     elif (idx==3):
                         x = self.layer4(x, step='forward')
+                    blocks.append(x)
             elif ('backward' in step):
                 for idx in range(3, -1, -1):
                     if (idx == 0):
@@ -185,6 +187,7 @@ class ResNet(nn.Module):
         # reconstruct to intermediate layers
         elif (self.ind_block>0):
             if ('forward' in step):
+                blocks = []
                 if (first==True):
                     if(inter==False):
                         for block in self.layer:
@@ -201,6 +204,8 @@ class ResNet(nn.Module):
                                 x = self.layer4(x, step='forward')
                             if ((idx+1)==self.ind_block):
                                 orig_feature = x
+                            if ((idx+1) >= self.ind_block):
+                                blocks.append(x)
                 elif (first==False):
                     for idx in range(self.ind_block, 4):
                         if (idx == 0):
@@ -211,6 +216,7 @@ class ResNet(nn.Module):
                             x = self.layer3(x, step='forward')
                         elif (idx == 3):
                             x = self.layer4(x, step='forward')
+                        blocks.append(x)
             elif ('backward' in step):
                 for idx in range(3, self.ind_block - 1, -1):
                     if (idx == 0):
@@ -226,11 +232,13 @@ class ResNet(nn.Module):
             if self.keep_avg_pool:
                 x = self.avgpool(x, step='forward')
             x = self.flatten(x, step='forward')
+            blocks.append(x)
+
 
         if (inter==False):
             return x
         elif (inter==True):
-            return x, orig_feature
+            return x, orig_feature, blocks
 
     def reset(self):
         """
@@ -264,10 +272,14 @@ class ResNet(nn.Module):
         self.layer4.dropout.reset()
         self.layer4.maxpool.reset()
 
-    def forward(self, x, inter_cycle = False):
+    def forward(self, x, inter_cycle = False, inter_layer = False):
         self.reset()
-        proto, orig_feature = self.forward_cycle(x, first=True, inter=True)
-        cycle_proto = [proto]
+        proto, orig_feature, blocks = self.forward_cycle(x, first=True, inter=True)
+        if inter_layer:
+            cycle_proto = [blocks]
+        else:
+            cycle_proto = [proto]
+
         ff_prev = orig_feature
 
         self.layer1.num_batches_tracked += 1
@@ -280,8 +292,11 @@ class ResNet(nn.Module):
             recon = self.forward_cycle(proto, step='backward')
             # feedforward
             ff_current = ff_prev + self.res_param * (recon - ff_prev)
-            proto = self.forward_cycle(ff_current, first=False)
-            cycle_proto.append(proto)
+            proto, _, blocks = self.forward_cycle(ff_current, first=False, inter=True)
+            if inter_layer:
+                cycle_proto.append(blocks)
+            else:
+                cycle_proto.append(proto)
             ff_prev = ff_current
 
         if inter_cycle:
@@ -290,15 +305,13 @@ class ResNet(nn.Module):
             return cycle_proto[-1]
 
 if __name__ == "__main__":
-    model = ResNet(ind_block = 0, cycles = 0).cuda()
+    model = ResNet(ind_block = 2, cycles = 1).cuda()
     rand_img_batch = torch.randn(3,3,84,84).cuda()
-    proto = model(rand_img_batch)
+    proto = model(rand_img_batch, inter_cycle=True, inter_layer=True)
+
     label = torch.arange(1).repeat(3)
     label = label.type(torch.cuda.LongTensor)
 
-    loss = F.cross_entropy(proto, label)
 
-    print(loss)
-    print(proto.size())
-    print(proto[1].mean(dim=0))
+    print(proto[0][0].shape)
 
