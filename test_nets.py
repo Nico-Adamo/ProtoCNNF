@@ -8,6 +8,7 @@ from samplers import CategoriesSampler
 
 # FOR DEBUG
 if __name__ == '__main__':
+    torch.manual_seed(0)
     args = Namespace(
         use_cosine_similarity = True,
         ind_block = 0,
@@ -48,5 +49,7 @@ if __name__ == '__main__':
     for j in range(args.cycles + 1):
         for k in range(6 - args.ind_block):
             print(cycle_logits[j][k])
-            loss += F.cross_entropy(cycle_logits[j][k], label) / ((args.cycles + 1) * (6 - args.ind_block))
+            loss_add = F.cross_entropy(cycle_logits[j][k], label) / ((args.cycles + 1) * (6 - args.ind_block))
+            loss += loss_add
+            print(loss_add)
             print(loss)
