@@ -35,6 +35,7 @@ if __name__ == '__main__':
     parser.add_argument('--ngpu', type=int, default = 1)
     parser.add_argument('--wandb', action='store_true')
     parser.add_argument('--inter-cycle-loss', action='store_true', default=False)
+    parser.add_argument('--bias-shift', action='store_true', default=False)
 
     args = parser.parse_args()
     pprint(vars(args))
