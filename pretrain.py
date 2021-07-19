@@ -126,7 +126,7 @@ if __name__ == '__main__':
                     logits_cycle = model(data, inter_cycle=True)
                     loss = 0
                     for cycle in range(args.cycles + 1):
-                        loss += criterion(logits_cycle[cycle], label)
+                        loss += criterion(logits_cycle[cycle], label) / (args.cycles + 1)
                     logits = logits_cycle[-1]
                 else:
                     logits = model(data)
