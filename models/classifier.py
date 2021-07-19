@@ -26,9 +26,16 @@ class Classifier(nn.Module):
         self.encoder = encoder
         self.fc = nn.Linear(self.hdim, self.num_classes)
 
-    def forward(self, x, **kwargs):
-        out = self.encoder(x, **kwargs)
-        out = self.fc(out)
+    def forward(self, x, inter_cycle = False, **kwargs):
+        if inter_cycle:
+            out = []
+            cycle_proto = torch.stack(self.encoder(x, inter_cycle = True, **kwargs))
+            for cycle in range(self.args.cycles + 1):
+                out.append(self.fc(cycle_proto[cycle]))
+            out = torch.stack(out)
+        else:
+            out = self.encoder(x, **kwargs)
+            out = self.fc(out)
         return out
 
     def forward_proto(self, data_shot, data_query, way = None, **kwargs):

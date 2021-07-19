@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--cycles', type=int, default = 2)
     parser.add_argument('--ngpu', type=int, default = 1)
     parser.add_argument('--wandb', action='store_true')
+    parser.add_argument('--inter-cycle-loss', action='store_true', default=False)
 
     args = parser.parse_args()
     pprint(vars(args))
@@ -120,9 +121,16 @@ if __name__ == '__main__':
                 data, label = [_.cuda() for _ in batch]
                 label = label.type(torch.cuda.LongTensor)
 
-                logits = model(data)
+                if args.inter_cycle_loss:
+                    logits_cycle = model(data, inter_cycle=True)
+                    loss = 0
+                    for cycle in range(args.cycles + 1):
+                        loss += criterion(logits_cycle[cycle], label)
+                    logits = logits_cycle[-1]
+                else:
+                    logits = model(data)
+                    loss = criterion(logits, label)
 
-                loss = criterion(logits, label)
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
 
