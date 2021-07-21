@@ -204,7 +204,7 @@ if __name__ == '__main__':
                     for i, batch in enumerate(test_loader, 1):
                         data, _ = [_.cuda() for _ in batch]
 
-                        logits, memory_addition = model(data, memory_bank_test)
+                        logits = model(data)
                         loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)
