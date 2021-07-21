@@ -25,7 +25,7 @@ class ProtoNet(nn.Module):
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
                     torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + args.query))).long().view(1, args.query, args.way))
 
-    def forward(self, x, memory_bank = memory_bank, get_feature=False, inter_cycle=False, inter_layer=False):
+    def forward(self, x, memory_bank = None, get_feature=False, inter_cycle=False, inter_layer=False):
         if get_feature:
             return self.encoder(x)
         else:
@@ -47,8 +47,10 @@ class ProtoNet(nn.Module):
                 return cycle_logits, cycle_instance_embs[:-1], recon_embs
             elif inter_cycle:
                 return cycle_logits
-            else:
+            elif self.training:
                 return logits, memory_bank_add
+            else:
+                return logits
 
     def _forward(self, instance_embs, support_idx, query_idx, memory_bank = None, cycle = 0):
         emb_dim = instance_embs.size(-1)
