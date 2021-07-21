@@ -62,7 +62,10 @@ class ProtoNet(nn.Module):
         total_num_proto = support.shape[0] * support.shape[1] * support.shape[2]
         flattened_support = support.view(total_num_proto, emb_dim)
 
-        memory = self.memory_bank.clone()
+        if self.memory_bank is not None:
+            memory = self.memory_bank.clone()
+        else:
+            memory = None
         if memory is not None:
             # calculate similarity between memory bank and support
             # flattened support: [batch_size * n_support, emb_dim]
