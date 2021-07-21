@@ -46,7 +46,7 @@ class ProtoNet(nn.Module):
                 cycle_logits.append(logits)
 
             if inter_layer:
-                return cycle_logits, cycle_instance_embs, recon_embs
+                return cycle_logits, cycle_instance_embs[:-1], recon_embs
             elif inter_cycle:
                 return cycle_logits
             else:
