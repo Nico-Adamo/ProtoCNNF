@@ -62,14 +62,12 @@ class ProtoNet(nn.Module):
         total_num_proto = support.shape[0] * support.shape[1] * support.shape[2]
         flattened_support = support.view(total_num_proto, emb_dim)
 
-        if self.memory_bank == None:
-            memory = self.memory_bank
-        else:
-            memory = None
+        memory = self.memory_bank
         if memory is not None:
             # calculate similarity between memory bank and support
             # flattened support: [batch_size * n_support, emb_dim]
             # memory: [n_memory, emb_dim]
+            memory = F.normalize(memory, dim=-1)
             sim = torch.matmul(flattened_support, memory.transpose(1, 2)).mean(dim=-1).view(support.shape[0], support.shape[1], support.shape[2])
 
             # sim = [n_batch, n_support]
