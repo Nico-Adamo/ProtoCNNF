@@ -60,14 +60,13 @@ class ProtoNet(nn.Module):
         query   = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
 
         total_num_proto = support.shape[0] * support.shape[1] * support.shape[2]
+        flattened_support = support.view(total_num_proto, emb_dim)
 
         if self.memory_bank == None:
             memory = self.memory_bank
         else:
             memory = None
         if memory is not None:
-            flattened_support = support.view(total_num_proto, emb_dim)
-
             # calculate similarity between memory bank and support
             # flattened support: [batch_size * n_support, emb_dim]
             # memory: [n_memory, emb_dim]
