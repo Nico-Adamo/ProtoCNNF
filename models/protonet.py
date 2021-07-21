@@ -76,6 +76,7 @@ class ProtoNet(nn.Module):
 
             # sim = [batch_size, n_shot, n_way (n_proto), 1]
             # Get the weighted mean of support set by similarity
+            print(sim.view(support.shape[0] * support.shape[1], -1))
             proto = (sim * support).sum(dim=1) / sim.sum(dim=1)
         else:
             proto = support.mean(dim=1)
@@ -83,6 +84,8 @@ class ProtoNet(nn.Module):
         num_batch = proto.shape[0]
         num_proto = proto.shape[1]
         num_query = np.prod(query_idx.shape[-2:])
+
+        memory_add = torch.cat([flattened_support, query.view(num_batch * num_query, -1)], dim=0)
 
         # query: (num_batch, num_query, num_proto, num_emb)
         # proto: (num_batch, num_proto, num_emb)
@@ -105,4 +108,4 @@ class ProtoNet(nn.Module):
             logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature
             logits = logits.view(-1, num_proto)
 
-        return logits, flattened_support
+        return logits, memory_add
