@@ -82,8 +82,12 @@ if __name__ == '__main__':
 
     train_loader, val_loader, test_loader = get_dataloader(args)
 
-    global memory_bank
-    memory_bank = None
+    global memory_bank_train
+    global memory_bank_val
+    global memory_bank_test
+    memory_bank_train = None
+    memory_bank_val = None
+    memory_bank_test = None
     model = ProtoNet(args).cuda()
 
     if args.restore_from != "":
@@ -146,13 +150,13 @@ if __name__ == '__main__':
                         loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
                     logits = cycle_logits[-1]
                 else:
-                    logits, memory_addition = model(data, memory_bank)
-                    if memory_bank == None:
-                        memory_ank = memory_addition
-                    elif memory_bank.shape[0] > args.memory_size:
-                        memory_bank = torch.cat([memory_bank[memory_addition.shape[0]:], memory_addition], dim=0)
+                    logits, memory_addition = model(data, memory_bank_train)
+                    if memory_bank_train == None:
+                        memory_bank_train = memory_addition
+                    elif memory_bank_train.shape[0] > args.memory_size:
+                        memory_bank_train = torch.cat([memory_bank_train[memory_addition.shape[0]:], memory_addition], dim=0)
                     else:
-                        memory_bank = torch.cat([memory_bank, memory_addition.shape[0]], dim=0)
+                        memory_bank_train = torch.cat([memory_bank_train, memory_addition.shape[0]], dim=0)
 
                     loss = F.cross_entropy(logits, label)
 
@@ -179,7 +183,13 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
-                logits = model(data, inter_cycle=False)
+                logits, memory_addition = model(data, memory_bank_val)
+                if memory_bank_val == None:
+                    memory_bank_val = memory_addition
+                elif memory_bank_val.shape[0] > args.memory_size:
+                    memory_bank_val = torch.cat([memory_bank_val[memory_addition.shape[0]:], memory_addition], dim=0)
+                else:
+                    memory_bank_val = torch.cat([memory_bank_val, memory_addition.shape[0]], dim=0)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -199,7 +209,13 @@ if __name__ == '__main__':
                     for i, batch in enumerate(test_loader, 1):
                         data, _ = [_.cuda() for _ in batch]
 
-                        logits = model(data, inter_cycle=False)
+                        logits, memory_addition = model(data, memory_bank_test)
+                        if memory_bank_test == None:
+                            memory_bank_test = memory_addition
+                        elif memory_bank_test.shape[0] > args.memory_size:
+                            memory_bank_test = torch.cat([memory_bank_test[memory_addition.shape[0]:], memory_addition], dim=0)
+                        else:
+                            memory_bank_test = torch.cat([memory_bank_test, memory_addition.shape[0]], dim=0)
                         loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)
