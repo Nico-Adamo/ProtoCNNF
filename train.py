@@ -128,11 +128,12 @@ if __name__ == '__main__':
                 data, _ = [_.cuda() for _ in batch]
 
                 if args.inter_layer_loss:
-                    cycle_logits = model(data, inter_cycle = True, inter_layer = True)
+                    cycle_logits, cycle_embs, recon_embs = model(data, inter_cycle = True, inter_layer = True)
                     loss = 0
                     for j in range(args.cycles + 1):
                         for k in range(6 - args.ind_block):
-                            loss += F.cross_entropy(cycle_logits[j][k], label) / ((args.cycles + 1) * (6 - args.ind_block))
+                            loss += F.mse_loss(cycle_embs[j][k], recon_embs[j][k]) / ((args.cycles + 1) * (6 - args.ind_block))
+                        loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
                     logits = cycle_logits[-1][-1]
                 elif args.inter_cycle_loss:
                     cycle_logits = model(data, inter_cycle=True)

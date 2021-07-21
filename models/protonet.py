@@ -20,6 +20,8 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
+        self.memory_bank = torch.empty(20, 640)
+
     def split_instances(self, data):
         args = self.args
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
@@ -31,7 +33,7 @@ class ProtoNet(nn.Module):
         else:
             # feature extraction
             x = x.squeeze(0)
-            cycle_instance_embs = self.encoder(x, inter_cycle=True, inter_layer=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
+            cycle_instance_embs, recon_embs = self.encoder(x, inter_cycle=True, inter_layer=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             cycle_logits = []
             for cycle in range(self.args.cycles + 1):
@@ -40,16 +42,12 @@ class ProtoNet(nn.Module):
                 # split support query set for few-shot data
                 support_idx, query_idx = self.split_instances(x)
 
-                if inter_layer:
-                    logits = []
-                    # Get prototypical logits for each layer
-                    for i in range(6 - self.args.ind_block):
-                        logits.append(self._forward(cycle_instance_embs[cycle][i], support_idx, query_idx))
-                else:
-                    logits = self._forward(instance_embs, support_idx, query_idx)
+                logits = self._forward(instance_embs, support_idx, query_idx)
                 cycle_logits.append(logits)
 
-            if inter_cycle:
+            if inter_layer:
+                return cycle_logits, cycle_instance_embs, recon_embs
+            elif inter_cycle:
                 return cycle_logits
             else:
                 return logits
@@ -85,7 +83,7 @@ class ProtoNet(nn.Module):
 
             # (num_batch,  num_emb, num_proto) * (num_batch, num_query*num_proto, num_emb) -> (num_batch, num_query*num_proto, num_proto)
             # (Nb, Nq*Np, d) * (Nb, d, Np) -> (Nb, Nq*Nw, Np)
-            logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature # TODO: magic number
+            logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature
             logits = logits.view(-1, num_proto)
 
         return logits

@@ -152,10 +152,12 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward_cycle(self, x, step='forward', first=True, inter=False):
+        blocks = []
         if ('backward' in step):
             x = self.flatten(x, step='backward')
             if self.keep_avg_pool:
                 x = self.avgpool(x, step='backward')
+            blocks.insert(0, x.view(x.size(0), -1))
 
         if (self.ind_block==0):
             blocks = [x.view(x.size(0), -1)]
@@ -183,11 +185,11 @@ class ResNet(nn.Module):
                         x = self.layer3(x, step='backward')
                     elif (idx == 3):
                         x = self.layer4(x, step='backward')
+                    blocks.insert(0, x.view(x.size(0), -1))
 
         # reconstruct to intermediate layers
         elif (self.ind_block>0):
             if ('forward' in step):
-                blocks = []
                 if (first==True):
                     if(inter==False):
                         for block in self.layer:
@@ -228,6 +230,7 @@ class ResNet(nn.Module):
                         x = self.layer3(x, step='backward')
                     elif (idx == 3):
                         x = self.layer4(x, step='backward')
+                    blocks.insert(0, x.view(x.size(0), -1))
 
         if ('forward' in step):
             if self.keep_avg_pool:
@@ -278,10 +281,8 @@ class ResNet(nn.Module):
     def forward(self, x, inter_cycle = False, inter_layer = False):
         self.reset()
         proto, orig_feature, blocks = self.forward_cycle(x, first=True, inter=True)
-        if inter_layer:
-            cycle_proto = [blocks]
-        else:
-            cycle_proto = [proto]
+        cycle_proto = []
+        recon_feature = []
 
         ff_prev = orig_feature
 
@@ -292,17 +293,20 @@ class ResNet(nn.Module):
 
         for i_cycle in range(self.cycles):
             # feedback
-            recon = self.forward_cycle(proto, step='backward')
+            recon, blocks_recon = self.forward_cycle(proto, step='backward', inter=True)
             # feedforward
             ff_current = ff_prev + self.res_param * (recon - ff_prev)
             proto, blocks = self.forward_cycle(ff_current, first=False, inter=True)
             if inter_layer:
                 cycle_proto.append(blocks)
+                recon_feature.append(blocks_recon)
             else:
                 cycle_proto.append(proto)
             ff_prev = ff_current
 
-        if inter_cycle:
+        if inter_layer:
+            return cycle_proto, recon_feature
+        elif inter_cycle:
             return cycle_proto
         else:
             return cycle_proto[-1]
