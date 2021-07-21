@@ -59,22 +59,30 @@ class ProtoNet(nn.Module):
         support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
         query   = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
 
+        total_num_proto = support.shape[0] * support.shape[1] * support.shape[2]
+
         if self.memory_bank == None:
             memory = self.memory_bank
         else:
             memory = None
-        flattened_support = support.view(support.shape[0], support.shape[1] * support.shape[2], emb_dim)
+        if memory is not None:
+            flattened_support = support.view(total_num_proto, emb_dim)
 
-        # calculate similarity between memory bank and support
-        # flattened support: [batch_size, n_support, emb_dim]
-        # memory: [batch_size, n_memory, emb_dim]
-        sim = torch.bmm(support, memory.transpose(1, 2)).mean(dim=-1)
+            # calculate similarity between memory bank and support
+            # flattened support: [batch_size * n_support, emb_dim]
+            # memory: [n_memory, emb_dim]
+            sim = torch.matmul(flattened_support, memory.transpose(1, 2)).mean(dim=-1).view(support.shape[0], support.shape[1], support.shape[2])
 
-        # sim = [batch_size, n_support]
-        # Get the weighted mean of support set by similarity
-        proto = (sim * support).sum(dim=1) / sim.sum(dim=1)
-
-        self.memory_bank = flattened_support
+            # sim = [n_batch, n_support]
+            # Get the weighted mean of support set by similarity
+            proto = (sim * support).sum(dim=1) / sim.sum(dim=1)
+            if self.memory_bank.shape[0] > self.args.memory_size:
+                self.memory_bank = torch.cat([self.memory_bank[total_num_proto:], flattened_support], dim=0)
+            else:
+                self.memory_bank = torch.cat([self.memory_bank, flattened_support], dim=0)
+        else:
+            self.memory_bank = flattened_support
+            proto = support.mean(dim=1)
 
         num_batch = proto.shape[0]
         num_proto = proto.shape[1]
