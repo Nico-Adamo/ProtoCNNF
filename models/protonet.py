@@ -42,7 +42,7 @@ class ProtoNet(nn.Module):
                 # split support query set for few-shot data
                 support_idx, query_idx = self.split_instances(x)
 
-                logits = self._forward(instance_embs, support_idx, query_idx)
+                logits = self._forward(instance_embs, support_idx, query_idx, cycle = cycle)
                 cycle_logits.append(logits)
 
             if inter_layer:
@@ -52,7 +52,7 @@ class ProtoNet(nn.Module):
             else:
                 return logits
 
-    def _forward(self, instance_embs, support_idx, query_idx):
+    def _forward(self, instance_embs, support_idx, query_idx, cycle = 0):
         emb_dim = instance_embs.size(-1)
 
         # organize support/query data
@@ -73,10 +73,11 @@ class ProtoNet(nn.Module):
             # sim = [batch_size, n_shot, n_way (n_proto), 1]
             # Get the weighted mean of support set by similarity
             proto = (sim * support).sum(dim=1) / sim.sum(dim=1)
-            if self.memory_bank.shape[0] > self.args.memory_size:
-                self.memory_bank = torch.cat([self.memory_bank[total_num_proto:], flattened_support], dim=0)
-            else:
-                self.memory_bank = torch.cat([self.memory_bank, flattened_support], dim=0)
+            if cycle == self.args.cycles:
+                if self.memory_bank.shape[0] > self.args.memory_size:
+                    self.memory_bank = torch.cat([self.memory_bank[total_num_proto:], flattened_support], dim=0)
+                else:
+                    self.memory_bank = torch.cat([self.memory_bank, flattened_support], dim=0)
         else:
             self.memory_bank = flattened_support
             proto = support.mean(dim=1)
