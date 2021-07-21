@@ -151,6 +151,7 @@ if __name__ == '__main__':
                     logits = cycle_logits[-1]
                 else:
                     logits, memory_addition = model(data, memory_bank_train)
+                    memory_addition = memory_addition.detach()
                     if memory_bank_train == None:
                         memory_bank_train = memory_addition
                     elif memory_bank_train.shape[0] > args.memory_size:
@@ -184,6 +185,7 @@ if __name__ == '__main__':
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
                 logits, memory_addition = model(data, memory_bank_val)
+                memory_addition = memory_addition.detach()
                 if memory_bank_val == None:
                     memory_bank_val = memory_addition
                 elif memory_bank_val.shape[0] > args.memory_size:
@@ -210,6 +212,7 @@ if __name__ == '__main__':
                         data, _ = [_.cuda() for _ in batch]
 
                         logits, memory_addition = model(data, memory_bank_test)
+                        memory_addition = memory_addition.detach()
                         if memory_bank_test == None:
                             memory_bank_test = memory_addition
                         elif memory_bank_test.shape[0] > args.memory_size:
