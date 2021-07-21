@@ -147,7 +147,9 @@ if __name__ == '__main__':
                     logits = cycle_logits[-1]
                 else:
                     logits, memory_addition = model(data, memory_bank)
-                    if memory_bank.shape[0] > args.memory_size:
+                    if memory_bank == None:
+                        memory_ank = memory_addition
+                    elif memory_bank.shape[0] > args.memory_size:
                         memory_bank = torch.cat([memory_bank[memory_addition.shape[0]:], memory_addition], dim=0)
                     else:
                         memory_bank = torch.cat([memory_bank, memory_addition.shape[0]], dim=0)
