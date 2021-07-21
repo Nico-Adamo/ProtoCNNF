@@ -146,7 +146,12 @@ if __name__ == '__main__':
                         loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
                     logits = cycle_logits[-1]
                 else:
-                    logits, memory_bank = model(data, memory_bank)
+                    logits, memory_addition = model(data, memory_bank)
+                    if memory_bank.shape[0] > args.memory_size:
+                        memory_bank = torch.cat([memory_bank[memory_addition.shape[0]:], memory_addition], dim=0)
+                    else:
+                        memory_bank = torch.cat([memory_bank, memory_addition.shape[0]], dim=0)
+
                     loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
