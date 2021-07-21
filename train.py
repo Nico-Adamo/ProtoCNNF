@@ -82,6 +82,8 @@ if __name__ == '__main__':
 
     train_loader, val_loader, test_loader = get_dataloader(args)
 
+    global memory_bank
+    memory_bank = None
     model = ProtoNet(args).cuda()
 
     if args.restore_from != "":
@@ -144,7 +146,7 @@ if __name__ == '__main__':
                         loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
                     logits = cycle_logits[-1]
                 else:
-                    logits = model(data)
+                    logits, memory_bank = model(data, memory_bank)
                     loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)

@@ -20,15 +20,12 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
-        global memory_bank
-        memory_bank = None
-
     def split_instances(self, data):
         args = self.args
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
                     torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + args.query))).long().view(1, args.query, args.way))
 
-    def forward(self, x, get_feature=False, inter_cycle=False, inter_layer=False):
+    def forward(self, x, memory_bank, get_feature=False, inter_cycle=False, inter_layer=False):
         if get_feature:
             return self.encoder(x)
         else:
@@ -43,7 +40,7 @@ class ProtoNet(nn.Module):
                 # split support query set for few-shot data
                 support_idx, query_idx = self.split_instances(x)
 
-                logits = self._forward(instance_embs, support_idx, query_idx, cycle = cycle)
+                logits, memory_bank = self._forward(instance_embs, support_idx, query_idx, memory_bank, cycle = cycle)
                 cycle_logits.append(logits)
 
             if inter_layer:
@@ -51,9 +48,9 @@ class ProtoNet(nn.Module):
             elif inter_cycle:
                 return cycle_logits
             else:
-                return logits
+                return logits, memory_bank
 
-    def _forward(self, instance_embs, support_idx, query_idx, cycle = 0):
+    def _forward(self, instance_embs, support_idx, query_idx, memory_bank, cycle = 0):
         emb_dim = instance_embs.size(-1)
 
         # organize support/query data
@@ -111,4 +108,4 @@ class ProtoNet(nn.Module):
             logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature
             logits = logits.view(-1, num_proto)
 
-        return logits
+        return logits, memory_bank
