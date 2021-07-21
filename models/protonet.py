@@ -25,7 +25,7 @@ class ProtoNet(nn.Module):
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
                     torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + args.query))).long().view(1, args.query, args.way))
 
-    def forward(self, x, memory_bank, get_feature=False, inter_cycle=False, inter_layer=False):
+    def forward(self, x, memory_bank = memory_bank, get_feature=False, inter_cycle=False, inter_layer=False):
         if get_feature:
             return self.encoder(x)
         else:
@@ -40,7 +40,7 @@ class ProtoNet(nn.Module):
                 # split support query set for few-shot data
                 support_idx, query_idx = self.split_instances(x)
 
-                logits, memory_bank_add = self._forward(instance_embs, support_idx, query_idx, memory_bank, cycle = cycle)
+                logits, memory_bank_add = self._forward(instance_embs, support_idx, query_idx, memory_bank = memory_bank, cycle = cycle)
                 cycle_logits.append(logits)
 
             if inter_layer:
@@ -50,7 +50,7 @@ class ProtoNet(nn.Module):
             else:
                 return logits, memory_bank_add
 
-    def _forward(self, instance_embs, support_idx, query_idx, memory_bank, cycle = 0):
+    def _forward(self, instance_embs, support_idx, query_idx, memory_bank = None, cycle = 0):
         emb_dim = instance_embs.size(-1)
 
         # organize support/query data
@@ -64,11 +64,12 @@ class ProtoNet(nn.Module):
             memory = memory_bank.clone()
         else:
             memory = None
-        if memory is not None:
+        if memory is not None and self.training:
             # calculate similarity between memory bank and support
             # flattened support: [batch_size * n_support, emb_dim]
             # memory: [n_memory, emb_dim]
             memory = F.normalize(memory, dim=-1)
+            flattened_support = F.normalize(flattened_support, dim=-1)
             sim = torch.matmul(flattened_support, memory.t().contiguous()).mean(dim=-1).view(support.shape[0], support.shape[1], support.shape[2], 1)
 
             # sim = [batch_size, n_shot, n_way (n_proto), 1]
