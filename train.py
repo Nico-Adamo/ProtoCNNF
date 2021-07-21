@@ -132,7 +132,7 @@ if __name__ == '__main__':
                     loss = 0
                     for j in range(args.cycles):
                         for k in range(6 - args.ind_block):
-                            loss += F.mse_loss(cycle_embs[j][k], recon_embs[j][k]) / ((args.cycles + 1) * (6 - args.ind_block))
+                            loss += F.mse_loss(cycle_embs[j][k], recon_embs[j][k]) / ((args.cycles) * (6 - args.ind_block)) * 0.1
                         loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
                     loss += F.cross_entropy(cycle_logits[args.cycles + 1], label) / (args.cycles + 1)
                     logits = cycle_logits[-1][-1]

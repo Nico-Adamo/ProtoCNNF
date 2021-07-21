@@ -154,10 +154,10 @@ class ResNet(nn.Module):
     def forward_cycle(self, x, step='forward', first=True, inter=False):
         blocks = []
         if ('backward' in step):
+            blocks.insert(0, x.view(x.size(0), -1))
             x = self.flatten(x, step='backward')
             if self.keep_avg_pool:
                 x = self.avgpool(x, step='backward')
-            blocks.insert(0, x.view(x.size(0), -1))
 
         if (self.ind_block==0):
             blocks = [x.view(x.size(0), -1)]
@@ -221,6 +221,7 @@ class ResNet(nn.Module):
                             x = self.layer4(x, step='forward')
                         blocks.append(x.view(x.size(0), -1))
             elif ('backward' in step):
+                blocks.insert(0, x.view(x.size(0), -1))
                 for idx in range(3, self.ind_block - 1, -1):
                     if (idx == 0):
                         x = self.layer1(x, step='backward')
