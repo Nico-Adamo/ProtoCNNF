@@ -156,7 +156,7 @@ if __name__ == '__main__':
                     elif memory_bank_train.shape[0] > args.memory_size:
                         memory_bank_train = torch.cat([memory_bank_train[memory_addition.shape[0]:], memory_addition], dim=0)
                     else:
-                        memory_bank_train = torch.cat([memory_bank_train, memory_addition.shape[0]], dim=0)
+                        memory_bank_train = torch.cat([memory_bank_train, memory_addition], dim=0)
 
                     loss = F.cross_entropy(logits, label)
 
@@ -189,7 +189,7 @@ if __name__ == '__main__':
                 elif memory_bank_val.shape[0] > args.memory_size:
                     memory_bank_val = torch.cat([memory_bank_val[memory_addition.shape[0]:], memory_addition], dim=0)
                 else:
-                    memory_bank_val = torch.cat([memory_bank_val, memory_addition.shape[0]], dim=0)
+                    memory_bank_val = torch.cat([memory_bank_val, memory_addition], dim=0)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -215,7 +215,7 @@ if __name__ == '__main__':
                         elif memory_bank_test.shape[0] > args.memory_size:
                             memory_bank_test = torch.cat([memory_bank_test[memory_addition.shape[0]:], memory_addition], dim=0)
                         else:
-                            memory_bank_test = torch.cat([memory_bank_test, memory_addition.shape[0]], dim=0)
+                            memory_bank_test = torch.cat([memory_bank_test, memory_addition], dim=0)
                         loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)
