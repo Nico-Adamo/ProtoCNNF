@@ -20,7 +20,8 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
-        self.memory_bank = None
+        global memory_bank
+        memory_bank = None
 
     def split_instances(self, data):
         args = self.args
@@ -62,8 +63,8 @@ class ProtoNet(nn.Module):
         total_num_proto = support.shape[0] * support.shape[1] * support.shape[2]
         flattened_support = support.view(total_num_proto, emb_dim)
 
-        if self.memory_bank is not None:
-            memory = self.memory_bank.clone()
+        if memory_bank is not None:
+            memory = memory_bank.clone()
         else:
             memory = None
         if memory is not None:
@@ -77,12 +78,12 @@ class ProtoNet(nn.Module):
             # Get the weighted mean of support set by similarity
             proto = (sim * support).sum(dim=1) / sim.sum(dim=1)
             if cycle == self.args.cycles:
-                if self.memory_bank.shape[0] > self.args.memory_size:
-                    self.memory_bank = torch.cat([self.memory_bank[total_num_proto:], flattened_support], dim=0)
+                if memory_bank.shape[0] > self.args.memory_size:
+                    memory_bank = torch.cat([memory_bank[total_num_proto:], flattened_support], dim=0)
                 else:
-                    self.memory_bank = torch.cat([self.memory_bank, flattened_support], dim=0)
+                    memory_bank = torch.cat([memory_bank, flattened_support], dim=0)
         else:
-            self.memory_bank = flattened_support
+            memory_bank = flattened_support
             proto = support.mean(dim=1)
 
         num_batch = proto.shape[0]
