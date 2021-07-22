@@ -184,7 +184,14 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
-                logits = model(data)
+                logits, memory_addition = model(data, memory_bank_train)
+                memory_addition = memory_addition.detach()
+                if memory_bank_train == None:
+                    memory_bank_train = memory_addition
+                elif memory_bank_train.shape[0] > args.memory_size:
+                    memory_bank_train = torch.cat([memory_bank_train[memory_addition.shape[0]:], memory_addition], dim=0)
+                else:
+                    memory_bank_train = torch.cat([memory_bank_train, memory_addition], dim=0)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -204,7 +211,14 @@ if __name__ == '__main__':
                     for i, batch in enumerate(test_loader, 1):
                         data, _ = [_.cuda() for _ in batch]
 
-                        logits = model(data)
+                        logits, memory_addition = model(data, memory_bank_train)
+                        memory_addition = memory_addition.detach()
+                        if memory_bank_train == None:
+                            memory_bank_train = memory_addition
+                        elif memory_bank_train.shape[0] > args.memory_size:
+                            memory_bank_train = torch.cat([memory_bank_train[memory_addition.shape[0]:], memory_addition], dim=0)
+                        else:
+                            memory_bank_train = torch.cat([memory_bank_train, memory_addition], dim=0)
                         loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)
@@ -223,7 +237,7 @@ if __name__ == '__main__':
             trlog['val_loss'].append(vl)
             trlog['val_acc'].append(va)
 
-            torch.save(trlog, osp.join(args.save_path, 'trlog'))
+            torch.save(trlog, os.join(args.save_path, 'trlog'))
 
             save_model('epoch-last')
 
