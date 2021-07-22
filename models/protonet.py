@@ -47,10 +47,8 @@ class ProtoNet(nn.Module):
                 return cycle_logits, cycle_instance_embs[:-1], recon_embs
             elif inter_cycle:
                 return cycle_logits
-            elif self.training:
-                return logits, memory_bank_add
             else:
-                return logits
+                return logits, memory_bank_add
 
     def _forward(self, instance_embs, support_idx, query_idx, memory_bank = None, cycle = 0):
         emb_dim = instance_embs.size(-1)
@@ -106,4 +104,4 @@ class ProtoNet(nn.Module):
             logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature
             logits = logits.view(-1, num_proto)
 
-        return logits, flattened_support
+        return logits, support.view(total_num_proto, emb_dim)
