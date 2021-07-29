@@ -72,6 +72,8 @@ class ProtoNet(nn.Module):
             shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_way, n_shot + n_memory, n_dim]
             memory_t = shot_memory.permute(0,2,1,3)
             support_t = support.permute(0,2,1,3)
+            memory_t = F.normalize(memory_t, dim=-1)
+            support_t = F.normalize(support_t, dim=-1)
             cos_matrix = torch.matmul(support_t, memory_t.permute(0,1,3,2)) # [batch_size, n_way, n_shot, n_memory]
             cos_matrix_t = cos_matrix.permute(0,2,1,3) # [batch_size, n_shot, n_way, n_memory]
             sim = cos_matrix_t.mean(dim=-1).unsqueeze(-1) # [batch_size, n_shot, n_way, 1]
