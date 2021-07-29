@@ -74,10 +74,11 @@ class ProtoNet(nn.Module):
             support_t = support.permute(0,2,1,3)
             memory_t = F.normalize(memory_t, dim=-1)
             support_t = F.normalize(support_t, dim=-1)
-            cos_matrix = torch.matmul(support_t, memory_t.permute(0,1,3,2)) # [batch_size, n_way, n_shot, n_memory]
-            cos_matrix_t = cos_matrix.permute(0,2,1,3) # [batch_size, n_shot, n_way, n_memory]
-            sim = cos_matrix_t.mean(dim=-1).unsqueeze(-1) # [batch_size, n_shot, n_way, 1]
-            proto = (sim * support).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
+            cos_matrix = torch.matmul(support_t, memory_t.permute(0,1,3,2)) # [batch_size, n_way, n_shot, n_shot + n_memory]
+            # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
+            sim = sim.mean(dim=2) # [batch_size, n_way, n_shot + n_memory]
+            sim = sim.permute(0,2,1).unsqueeze(-1) # [batch_size, n_shot + n_memory, n_way, 1]
+            proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
         else:
             proto = support.mean(dim=1)
 
