@@ -47,8 +47,10 @@ class ProtoNet(nn.Module):
                 return cycle_logits, cycle_instance_embs[:-1], recon_embs
             elif inter_cycle:
                 return cycle_logits
-            else:
+            elif self.training:
                 return logits, memory_bank_add
+            else:
+                return logits
 
     def _forward(self, instance_embs, support_idx, query_idx, memory_bank = None, cycle = 0):
         emb_dim = instance_embs.size(-1)
@@ -57,25 +59,23 @@ class ProtoNet(nn.Module):
         support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
         query   = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
 
-        total_num_proto = support.shape[0] * support.shape[1] * support.shape[2]
-        flattened_support = support.view(total_num_proto, emb_dim)
-
+        batch_size, n_shot, n_way, n_dim = support.shape
         if memory_bank is not None:
             memory = memory_bank.clone()
         else:
             memory = None
-        if memory is not None and self.training:
-            # calculate similarity between memory bank and support
-            # flattened support: [batch_size * n_support, emb_dim]
-            # memory: [n_memory, emb_dim]
-            memory = torch.cat([flattened_support, memory], dim=0)
-            memory = F.normalize(memory, dim=-1)
-            flattened_support = F.normalize(flattened_support, dim=-1)
-            sim = torch.matmul(flattened_support, memory.t().contiguous()).mean(dim=-1).view(support.shape[0], support.shape[1], support.shape[2], 1)
-            sim[total_num_proto:] *= 0.2
-            # sim = [batch_size, n_shot, n_way (n_proto), 1]
-            # Get the weighted mean of support set by similarity
-            proto = (sim * support).sum(dim=1) / sim.sum(dim=1)
+        if memory is not None:
+            n_memory, _ = memory.shape
+            # Memory [n_memory, n_dim]
+            # Support [batch_size, n_shot, n_way, n_dim]
+            memory_x = memory.view(batch_size, n_memory, 1, n_dim).expand(-1, -1, n_way, -1)
+            shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_way, n_shot + n_memory, n_dim]
+            memory_t = shot_memory.permute(0,2,1,3)
+            support_t = support.permute(0,2,1,3)
+            cos_matrix = torch.matmul(support_t, memory_t.permute(0,1,3,2)) # [batch_size, n_way, n_shot, n_memory]
+            cos_matrix_t = cos_matrix.permute(0,2,1,3) # [batch_size, n_shot, n_way, n_memory]
+            sim = cos_matrix_t.mean(dim=-1).unsqueeze(-1) # [batch_size, n_shot, n_way, 1]
+            proto = (sim * support).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
         else:
             proto = support.mean(dim=1)
 
@@ -104,4 +104,4 @@ class ProtoNet(nn.Module):
             logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature
             logits = logits.view(-1, num_proto)
 
-        return logits, support.view(total_num_proto, emb_dim)
+        return logits, support.view(batch_size * n_shot * n_way, emb_dim)
