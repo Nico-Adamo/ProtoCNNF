@@ -6,14 +6,14 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from samplers import CategoriesSampler
 from utils import get_dataloader
-from utils import pprint, set_gpu
+from utils import pprint, set_gpu, count_acc
 # FOR DEBUG
 if __name__ == '__main__':
-    restore_from = "models/resnet-21-dist-bias/max-acc.pth"
+    restore_from = "models/resnet-21-bias/max-acc.pth"
 
     torch.manual_seed(0)
     args = Namespace(
-        use_cosine_similarity = False,
+        use_cosine_similarity = True,
         ind_block = 2,
         cycles = 1,
         ind_layer = 0,
@@ -49,6 +49,7 @@ if __name__ == '__main__':
     for i, batch in enumerate(train_loader, 1):
         data, _ = [_.cuda() for _ in batch]
         cycle_logits = model.encoder(data, inter_cycle=True)
+
         cycle0_support = cycle_logits[0][0:100]
         cycle0_query = cycle_logits[0][100:]
         cycle1_support = cycle_logits[1][0:100]
@@ -63,10 +64,7 @@ if __name__ == '__main__':
         U, S, V = torch.pca_lowrank(cycle1_query)
         cycle1_viz_q = torch.matmul(cycle1_query, V[:,:2])
 
-        if i == 0:
-            f = open("cycle.dat", "w")
-        else:
-            f = open("cycle.dat", "a")
+        f = open("cycle.dat", "a")
         f.write(str(cycle0_viz.detach()))
         f.write("\n")
         f.write(str(cycle1_viz.detach()))
@@ -77,6 +75,17 @@ if __name__ == '__main__':
         f.write("\n--\n")
         f.close()
 
+        support_idx, query_idx = model.split_instances(x)
+
+        logits, _ = model._forward(cycle_logits[0], support_idx, query_idx, memory_bank = None)
+        loss = F.cross_entropy(logits, label)
+        acc = count_acc(logits, label)
+        print("Accuracy cycle 0: " + str(acc))
+
+        logits, _ = model._forward(cycle_logits[1], support_idx, query_idx, memory_bank = None)
+        loss = F.cross_entropy(logits, label)
+        acc = count_acc(logits, label)
+        print("Accuracy cycle 1: " + str(acc))
 
         if i == 5:
             break
