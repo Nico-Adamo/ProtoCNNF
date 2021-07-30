@@ -37,8 +37,8 @@ if __name__ == '__main__':
     model = ProtoNet(args).cuda()
 
     if restore_from != "":
-        print("Restoring from {}".format(args.restore_from))
-        checkpoint = torch.load(args.restore_from)
+        print("Restoring from {}".format(restore_from))
+        checkpoint = torch.load(restore_from)
         checkpoint = {k: v for k, v in checkpoint.items() if k in model.state_dict()}
         model.load_state_dict(checkpoint)
     label = torch.arange(args.way, dtype=torch.int16).repeat(args.query)
