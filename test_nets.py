@@ -53,12 +53,18 @@ if __name__ == '__main__':
         cycle1_support = cycle_logits[1][0:25]
         cycle1_query = cycle_logits[1][25:]
 
-        print(cycle0_support.shape)
-        print(cycle0_query.shape)
         U, S, V = torch.pca_lowrank(cycle0_support)
         cycle0_viz = torch.matmul(cycle0_support, V[:,:2])
-        print(cycle0_viz)
-        print(cycle0_viz.shape)
+        U, S, V = torch.pca_lowrank(cycle1_support)
+        cycle1_viz = torch.matmul(cycle1_support, V[:,:2])
 
-        if i == 1:
+        f = open("cycle.dat", "w")
+        f.write(str(cycle0_viz.detach()))
+        f.write("\n")
+        f.write(str(cycle1_viz.detach()))
+        f.write("\n--\n")
+        f.close()
+
+
+        if i == 4:
             break
