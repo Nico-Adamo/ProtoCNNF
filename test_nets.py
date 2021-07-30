@@ -9,11 +9,11 @@ from utils import get_dataloader
 from utils import pprint, set_gpu, count_acc
 # FOR DEBUG
 if __name__ == '__main__':
-    restore_from = "models/resnet-feedback-21-bias/max-acc.pth"
+    restore_from = "models/resnet-21-bias/max-acc.pth"
 
     torch.manual_seed(0)
     args = Namespace(
-        use_cosine_similarity = True,
+        use_cosine_similarity = False,
         ind_block = 2,
         cycles = 1,
         ind_layer = 0,
@@ -64,10 +64,10 @@ if __name__ == '__main__':
             loss = F.cross_entropy(logits, label)
             acc_1 = count_acc(logits, label)
 
-            if (acc_0 < 1 and acc_1 < acc_0 and count_down < 1) or (acc_0 < 1 and acc_1 > acc_0 and count_up < 3):
-                if (acc_0 < 1 and acc_1 < acc_0 and count_down < 1):
+            if (acc_1 < acc_0 and count_down < 1) or (acc_1 > acc_0 and count_up < 3):
+                if (acc_1 < acc_0 and count_down < 1):
                     count_down += 1
-                if (acc_0 < 1 and acc_1 > acc_0 and count_up < 3):
+                if (acc_1 > acc_0 and count_up < 3):
                     count_up += 1
                 count += 1
                 print("Accuracy cycle 0: " + str(acc_0))
