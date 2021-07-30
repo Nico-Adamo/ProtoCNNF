@@ -43,7 +43,7 @@ class ProtoNet(nn.Module):
                 # split support query set for few-shot data
                 support_idx, query_idx = self.split_instances(x)
 
-                logits, memory_bank_add = self._forward(instance_embs, support_idx, query_idx, memory_bank = memory_bank, cycle = cycle)
+                logits, logits_support, memory_bank_add = self._forward(instance_embs, support_idx, query_idx, memory_bank = memory_bank, cycle = cycle)
                 cycle_logits.append(logits)
 
             if inter_layer:
@@ -51,9 +51,9 @@ class ProtoNet(nn.Module):
             elif inter_cycle:
                 return cycle_logits
             elif self.training:
-                return logits, memory_bank_add
+                return logits, logits_support, memory_bank_add
             else:
-                return logits
+                return logits, logits_support
 
     def _forward(self, instance_embs, support_idx, query_idx, memory_bank = None, cycle = 0):
         emb_dim = instance_embs.size(-1)
@@ -117,5 +117,8 @@ class ProtoNet(nn.Module):
             # (Nb, Nq*Np, d) * (Nb, d, Np) -> (Nb, Nq*Nw, Np)
             logits = torch.bmm(query, proto.permute([0,2,1])) / self.temp
             logits = logits.view(-1, num_proto)
+            # (Nb, Np, d), (Nb, d, Np) -> (Nb, Np, Np)
+            logits_support = torch.bmm(proto, proto.permute([0,2,1])) / self.temp
+            logits_support = logits.view(-1, num_proto)
 
-        return logits, support.view(batch_size * n_shot * n_way, emb_dim)
+        return logits, logits_support, support.view(batch_size * n_shot * n_way, emb_dim)

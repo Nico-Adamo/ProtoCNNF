@@ -21,13 +21,16 @@ def prepare_label(args):
 
     # prepare one-hot label
     label = torch.arange(args.way, dtype=torch.int16).repeat(args.query)
+    label_support = torch.arange(args.way, dtype=torch.int16)
 
     label = label.type(torch.LongTensor)
+    label_support = label_support.type(torch.LongTensor())
 
     if torch.cuda.is_available():
         label = label.cuda()
+        label_support = label_support.cuda()
 
-    return label
+    return label, label_support
 
 def save_model(name):
     torch.save(model.state_dict(), osp.join(args.save_path, name + '.pth'))
@@ -120,7 +123,7 @@ if __name__ == '__main__':
     timer = Timer()
 
     wandb.watch(model, log_freq=10)
-    label = prepare_label(args)
+    label, label_support = prepare_label(args)
 
     for epoch in range(1, args.max_epoch + 1):
         print("Epoch " + str(epoch))
@@ -150,7 +153,7 @@ if __name__ == '__main__':
                         loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
                     logits = cycle_logits[-1]
                 else:
-                    logits, memory_addition = model(data)
+                    logits, logits_support, memory_addition = model(data)
                     memory_addition = memory_addition.detach()
                     if memory_bank_train == None:
                         memory_bank_train = memory_addition
@@ -159,7 +162,7 @@ if __name__ == '__main__':
                     else:
                         memory_bank_train = torch.cat([memory_bank_train, memory_addition], dim=0)
 
-                    loss = F.cross_entropy(logits, label)
+                    loss = F.cross_entropy(logits, label) + 0.2 * F.cross_entropy(logits_support, label_support)
 
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
@@ -184,8 +187,8 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
-                logits = model(data)
-                loss = F.cross_entropy(logits, label)
+                logits, logits_support = model(data)
+                loss = F.cross_entropy(logits, label) + 0.2 * F.cross_entropy(logits_support, label_support)
 
                 acc = count_acc(logits, label)
 
@@ -204,8 +207,8 @@ if __name__ == '__main__':
                     for i, batch in enumerate(test_loader, 1):
                         data, _ = [_.cuda() for _ in batch]
 
-                        logits = model(data)
-                        loss = F.cross_entropy(logits, label)
+                        logits, logits_support = model(data)
+                        loss = F.cross_entropy(logits, label) + 0.2 * F.cross_entropy(logits_support, label_support)
 
                         acc = count_acc(logits, label)
                         ave_acc.add(acc)
