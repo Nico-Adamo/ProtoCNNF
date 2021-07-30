@@ -47,6 +47,8 @@ if __name__ == '__main__':
 
     model.eval()
     count = 0
+    count_up = 0
+    count_down = 0
     with torch.no_grad():
         for i, batch in enumerate(test_loader, 1):
             data, _ = [_.cuda() for _ in batch]
@@ -56,15 +58,21 @@ if __name__ == '__main__':
 
             logits, _ = model._forward(cycle_logits[0], support_idx, query_idx, memory_bank = None)
             loss = F.cross_entropy(logits, label)
-            acc = count_acc(logits, label)
-            if acc < 1:
-                count += 1
-                print("Accuracy cycle 0: " + str(acc))
+            acc_0 = count_acc(logits, label)
 
-                logits, _ = model._forward(cycle_logits[1], support_idx, query_idx, memory_bank = None)
-                loss = F.cross_entropy(logits, label)
-                acc = count_acc(logits, label)
-                print("Accuracy cycle 1: " + str(acc))
+            logits, _ = model._forward(cycle_logits[1], support_idx, query_idx, memory_bank = None)
+            loss = F.cross_entropy(logits, label)
+            acc_1 = count_acc(logits, label)
+
+            if (acc_0 < 1 and acc_1 > acc_0 and count_down < 2) or (acc_0 < 1 and acc_1 < acc_0 and count_up < 2):
+                if (acc_0 < 1 and acc_1 > acc_0 and count_down < 2):
+                    count_down += 1
+                if (acc_0 < 1 and acc_1 < acc_0 and count_up < 2):
+                    count_up += 1
+                count += 1
+                print("Accuracy cycle 0: " + str(acc_0))
+
+                print("Accuracy cycle 1: " + str(acc_1))
 
                 cycle0_support = cycle_logits[0][0:100]
                 cycle0_query = cycle_logits[0][100:]
