@@ -46,7 +46,7 @@ if __name__ == '__main__':
     label = label.type(torch.LongTensor).cuda()
 
     model.eval()
-    for i, batch in enumerate(train_loader, 1):
+    for i, batch in enumerate(test_loader, 1):
         data, _ = [_.cuda() for _ in batch]
         cycle_logits = model.encoder(data, inter_cycle=True)
 
