@@ -48,10 +48,10 @@ if __name__ == '__main__':
     for i, batch in enumerate(train_loader, 1):
         data, _ = [_.cuda() for _ in batch]
         cycle_logits = model.encoder(data, inter_cycle=True)
-        cycle0_support = cycle_logits[0,0,0:25]
-        cycle0_query = cycle_logits[0,0,25:]
-        cycle1_support = cycle_logits[1,0,0:25]
-        cycle1_query = cycle_logits[1,0,25:]
+        cycle0_support = cycle_logits[0][0,0:25]
+        cycle0_query = cycle_logits[0][0,25:]
+        cycle1_support = cycle_logits[1][0,0:25]
+        cycle1_query = cycle_logits[1][0,25:]
 
         U, S, V = torch.pca_lowrank(cycle0_support)
         cycle0_viz = torch.matmul(cycle0_support, V[:,:2])
