@@ -21,6 +21,8 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
+        self.temp = nn.Parameter(torch.tensor(1.0))
+
     def split_instances(self, data):
         args = self.args
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
@@ -36,14 +38,12 @@ class ProtoNet(nn.Module):
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             cycle_logits = []
             for cycle in range(self.args.cycles + 1):
-                instance_embs_0 = cycle_instance_embs[0][-1]
                 instance_embs = cycle_instance_embs[cycle][-1]
                 num_inst = instance_embs.shape[0]
                 # split support query set for few-shot data
                 support_idx, query_idx = self.split_instances(x)
 
-                query = instance_embs_0[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
-                logits, memory_bank_add = self._forward(instance_embs, support_idx, query_idx, memory_bank = memory_bank, cycle = cycle, query_override = query)
+                logits, memory_bank_add = self._forward(instance_embs, support_idx, query_idx, memory_bank = memory_bank, cycle = cycle)
                 cycle_logits.append(logits)
 
             if inter_layer:
@@ -55,15 +55,12 @@ class ProtoNet(nn.Module):
             else:
                 return logits
 
-    def _forward(self, instance_embs, support_idx, query_idx, memory_bank = None, cycle = 0, query_override = None):
+    def _forward(self, instance_embs, support_idx, query_idx, memory_bank = None, cycle = 0):
         emb_dim = instance_embs.size(-1)
 
         # organize support/query data
         support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
-        if query_override is None:
-            query = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
-        else:
-            query = query_override
+        query = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
 
         batch_size, n_shot, n_way, n_dim = support.shape
         if memory_bank is not None:
@@ -111,14 +108,14 @@ class ProtoNet(nn.Module):
             proto = proto.unsqueeze(1).expand(num_batch, num_query, num_proto, emb_dim)
             proto = proto.contiguous().view(num_batch*num_query, num_proto, emb_dim) # (Nbatch x Nq, Nk, d)
 
-            logits = - torch.sum((proto - query) ** 2, 2) / self.args.temperature
+            logits = - torch.sum((proto - query) ** 2, 2) / self.temp
         else: # cosine similarity: more memory efficient
             proto = F.normalize(proto, dim=-1) # normalize for cosine distance
             query = query.view(num_batch, -1, emb_dim) # (Nbatch,  Nq*Nw, d)
 
             # (num_batch,  num_emb, num_proto) * (num_batch, num_query*num_proto, num_emb) -> (num_batch, num_query*num_proto, num_proto)
             # (Nb, Nq*Np, d) * (Nb, d, Np) -> (Nb, Nq*Nw, Np)
-            logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature
+            logits = torch.bmm(query, proto.permute([0,2,1])) / self.temp
             logits = logits.view(-1, num_proto)
 
         return logits, support.view(batch_size * n_shot * n_way, emb_dim)
