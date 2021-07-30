@@ -18,7 +18,7 @@ if __name__ == '__main__':
         cycles = 1,
         ind_layer = 0,
         temperature = 1.0,
-        query = 5,
+        query = 15,
         shot = 20,
         way = 5,
         episodes_per_epoch = 100,
