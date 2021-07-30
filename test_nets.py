@@ -64,7 +64,10 @@ if __name__ == '__main__':
         U, S, V = torch.pca_lowrank(cycle1_query)
         cycle1_viz_q = torch.matmul(cycle1_query, V[:,:2])
 
-        f = open("cycle.dat", "a")
+        if i==1:
+            f = open("cycle.txt", "w")
+        else:
+            f = open("cycle.txt", "a")
         f.write(str(cycle0_viz.detach()))
         f.write("\n")
         f.write(str(cycle1_viz.detach()))
@@ -75,7 +78,7 @@ if __name__ == '__main__':
         f.write("\n--\n")
         f.close()
 
-        support_idx, query_idx = model.split_instances(x)
+        support_idx, query_idx = model.split_instances(data)
 
         logits, _ = model._forward(cycle_logits[0], support_idx, query_idx, memory_bank = None)
         loss = F.cross_entropy(logits, label)
