@@ -36,12 +36,14 @@ class ProtoNet(nn.Module):
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             cycle_logits = []
             for cycle in range(self.args.cycles + 1):
+                instance_embs_0 = cycle_instance_embs[0][-1]
                 instance_embs = cycle_instance_embs[cycle][-1]
                 num_inst = instance_embs.shape[0]
                 # split support query set for few-shot data
                 support_idx, query_idx = self.split_instances(x)
 
-                logits, memory_bank_add = self._forward(instance_embs, support_idx, query_idx, memory_bank = memory_bank, cycle = cycle)
+                query = instance_embs_0[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
+                logits, memory_bank_add = self._forward(instance_embs, support_idx, query_idx, memory_bank = memory_bank, cycle = cycle, query_override = query)
                 cycle_logits.append(logits)
 
             if inter_layer:
@@ -53,12 +55,15 @@ class ProtoNet(nn.Module):
             else:
                 return logits
 
-    def _forward(self, instance_embs, support_idx, query_idx, memory_bank = None, cycle = 0):
+    def _forward(self, instance_embs, support_idx, query_idx, memory_bank = None, cycle = 0, query_override = None):
         emb_dim = instance_embs.size(-1)
 
         # organize support/query data
         support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
-        query   = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
+        if query_override is None:
+            query = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
+        else:
+            query = query_override
 
         batch_size, n_shot, n_way, n_dim = support.shape
         if memory_bank is not None:
@@ -79,8 +84,8 @@ class ProtoNet(nn.Module):
             # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
             sim = cos_matrix.mean(dim=2) # [batch_size, n_way, n_shot + n_memory]
             topk, ind = torch.topk(sim, 8, dim=-1) # 8 = num of support examples per class
-            res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory))
-            sim = res.scatter(1, ind, topk) # Make all weights but top-k 0
+            res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory).cuda())
+            sim = res.scatter(2, ind, topk) # Make all weights but top-k 0
 
             # mask_thresh = (sim > 0.75).float()
             # sim = sim * mask_thresh + 1e-8

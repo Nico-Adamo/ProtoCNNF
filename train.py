@@ -150,7 +150,7 @@ if __name__ == '__main__':
                         loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
                     logits = cycle_logits[-1]
                 else:
-                    logits, memory_addition = model(data, memory_bank_train)
+                    logits, memory_addition = model(data)
                     memory_addition = memory_addition.detach()
                     if memory_bank_train == None:
                         memory_bank_train = memory_addition
@@ -184,7 +184,7 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
-                logits = model(data, memory_bank_train)
+                logits = model(data)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -204,7 +204,7 @@ if __name__ == '__main__':
                     for i, batch in enumerate(test_loader, 1):
                         data, _ = [_.cuda() for _ in batch]
 
-                        logits = model(data, memory_bank_train)
+                        logits = model(data)
                         loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)
