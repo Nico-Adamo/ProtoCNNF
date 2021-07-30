@@ -9,17 +9,17 @@ from utils import get_dataloader
 from utils import pprint, set_gpu
 # FOR DEBUG
 if __name__ == '__main__':
-    restore_from = "models/resnet-feedback-21-bias/max-acc.pth"
+    restore_from = "models/resnet-21-dist-bias/max-acc.pth"
 
     torch.manual_seed(0)
     args = Namespace(
-        use_cosine_similarity = True,
+        use_cosine_similarity = False,
         ind_block = 2,
         cycles = 1,
         ind_layer = 0,
         temperature = 1.0,
         query = 1,
-        shot = 40,
+        shot = 20,
         way = 5,
         episodes_per_epoch = 100,
         num_workers = 8,
@@ -59,7 +59,7 @@ if __name__ == '__main__':
         U, S, V = torch.pca_lowrank(cycle1_support)
         cycle1_viz = torch.matmul(cycle1_support, V[:,:2])
 
-        if i == 1:
+        if i == 0:
             f = open("cycle.dat", "w")
         else:
             f = open("cycle.dat", "a")
