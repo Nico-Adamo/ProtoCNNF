@@ -9,7 +9,7 @@ from utils import get_dataloader
 
 # FOR DEBUG
 if __name__ == '__main__':
-    restore_from = "models/resnet-feedback-21-bias"
+    restore_from = "models/resnet-feedback-21-bias/max-acc.pth"
 
     torch.manual_seed(0)
     args = Namespace(
