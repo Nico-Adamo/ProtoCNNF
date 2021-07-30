@@ -47,52 +47,53 @@ if __name__ == '__main__':
 
     model.eval()
     count = 0
-    for i, batch in enumerate(test_loader, 1):
-        data, _ = [_.cuda() for _ in batch]
-        cycle_logits = model.encoder(data, inter_cycle=True)
+    with torch.no_grad():
+        for i, batch in enumerate(test_loader, 1):
+            data, _ = [_.cuda() for _ in batch]
+            cycle_logits = model.encoder(data, inter_cycle=True)
 
-        support_idx, query_idx = model.split_instances(data)
+            support_idx, query_idx = model.split_instances(data)
 
-        logits, _ = model._forward(cycle_logits[0], support_idx, query_idx, memory_bank = None)
-        loss = F.cross_entropy(logits, label)
-        acc = count_acc(logits, label)
-        if acc < 1:
-            count += 1
-            print("Accuracy cycle 0: " + str(acc))
-
-            logits, _ = model._forward(cycle_logits[1], support_idx, query_idx, memory_bank = None)
+            logits, _ = model._forward(cycle_logits[0], support_idx, query_idx, memory_bank = None)
             loss = F.cross_entropy(logits, label)
             acc = count_acc(logits, label)
-            print("Accuracy cycle 1: " + str(acc))
+            if acc < 1:
+                count += 1
+                print("Accuracy cycle 0: " + str(acc))
 
-            cycle0_support = cycle_logits[0][0:100]
-            cycle0_query = cycle_logits[0][100:]
-            cycle1_support = cycle_logits[1][0:100]
-            cycle1_query = cycle_logits[1][100:]
+                logits, _ = model._forward(cycle_logits[1], support_idx, query_idx, memory_bank = None)
+                loss = F.cross_entropy(logits, label)
+                acc = count_acc(logits, label)
+                print("Accuracy cycle 1: " + str(acc))
 
-            U, S, V = torch.pca_lowrank(cycle0_support)
-            cycle0_viz = torch.matmul(cycle0_support, V[:,:2])
-            U, S, V = torch.pca_lowrank(cycle1_support)
-            cycle1_viz = torch.matmul(cycle1_support, V[:,:2])
-            U, S, V = torch.pca_lowrank(cycle0_query)
-            cycle0_viz_q = torch.matmul(cycle0_query, V[:,:2])
-            U, S, V = torch.pca_lowrank(cycle1_query)
-            cycle1_viz_q = torch.matmul(cycle1_query, V[:,:2])
+                cycle0_support = cycle_logits[0][0:100]
+                cycle0_query = cycle_logits[0][100:]
+                cycle1_support = cycle_logits[1][0:100]
+                cycle1_query = cycle_logits[1][100:]
 
-            if count==1:
-                f = open("cycle.txt", "w")
-            else:
-                f = open("cycle.txt", "a")
-            f.write(str(cycle0_viz.detach()))
-            f.write("\n")
-            f.write(str(cycle1_viz.detach()))
-            f.write("\n")
-            f.write(str(cycle0_viz_q.detach()))
-            f.write("\n")
-            f.write(str(cycle1_viz_q.detach()))
-            f.write("\n--\n")
-            f.close()
+                U, S, V = torch.pca_lowrank(cycle0_support)
+                cycle0_viz = torch.matmul(cycle0_support, V[:,:2])
+                U, S, V = torch.pca_lowrank(cycle1_support)
+                cycle1_viz = torch.matmul(cycle1_support, V[:,:2])
+                U, S, V = torch.pca_lowrank(cycle0_query)
+                cycle0_viz_q = torch.matmul(cycle0_query, V[:,:2])
+                U, S, V = torch.pca_lowrank(cycle1_query)
+                cycle1_viz_q = torch.matmul(cycle1_query, V[:,:2])
+
+                if count==1:
+                    f = open("cycle.txt", "w")
+                else:
+                    f = open("cycle.txt", "a")
+                f.write(str(cycle0_viz.detach()))
+                f.write("\n")
+                f.write(str(cycle1_viz.detach()))
+                f.write("\n")
+                f.write(str(cycle0_viz_q.detach()))
+                f.write("\n")
+                f.write(str(cycle1_viz_q.detach()))
+                f.write("\n--\n")
+                f.close()
 
 
-        if count == 5:
-            break
+            if count == 5:
+                break
