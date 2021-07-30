@@ -18,7 +18,7 @@ if __name__ == '__main__':
         cycles = 1,
         ind_layer = 0,
         temperature = 1.0,
-        query = 1,
+        query = 5,
         shot = 20,
         way = 5,
         episodes_per_epoch = 100,
@@ -64,10 +64,10 @@ if __name__ == '__main__':
             loss = F.cross_entropy(logits, label)
             acc_1 = count_acc(logits, label)
 
-            if (acc_0 < 1 and acc_1 > acc_0 and count_down < 1) or (acc_0 < 1 and acc_1 < acc_0 and count_up < 3):
-                if (acc_0 < 1 and acc_1 > acc_0 and count_down < 1):
+            if (acc_0 < 1 and acc_1 < acc_0 and count_down < 1) or (acc_0 < 1 and acc_1 > acc_0 and count_up < 3):
+                if (acc_0 < 1 and acc_1 < acc_0 and count_down < 1):
                     count_down += 1
-                if (acc_0 < 1 and acc_1 < acc_0 and count_up < 3):
+                if (acc_0 < 1 and acc_1 > acc_0 and count_up < 3):
                     count_up += 1
                 count += 1
                 print("Accuracy cycle 0: " + str(acc_0))
@@ -95,10 +95,6 @@ if __name__ == '__main__':
                 f.write(str(cycle0_viz.detach()))
                 f.write("\n")
                 f.write(str(cycle1_viz.detach()))
-                f.write("\n")
-                f.write(str(cycle0_viz_q.detach()))
-                f.write("\n")
-                f.write(str(cycle1_viz_q.detach()))
                 f.write("\n--\n")
                 f.close()
 
