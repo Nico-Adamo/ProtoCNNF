@@ -9,7 +9,7 @@ from utils import get_dataloader
 
 # FOR DEBUG
 if __name__ == '__main__':
-    restore_from = ""
+    restore_from = "models/resnet-feedback-21-bias"
 
     torch.manual_seed(0)
     args = Namespace(
@@ -21,8 +21,13 @@ if __name__ == '__main__':
         query = 1,
         shot = 5,
         way = 5,
+        episodes_per_epoch = 100,
+        num_workers = 8,
+        multi_gpu = False,
+        num_eval_episodes = 1000,
         model = "ResNet12",
-        bias_shift = True
+        bias_shift = True,
+        dataset = "MiniImageNet"
     )
 
     train_loader, val_loader, test_loader = get_dataloader(args)
