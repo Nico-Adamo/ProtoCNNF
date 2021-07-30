@@ -31,7 +31,7 @@ if __name__ == '__main__':
         dataset = "MiniImageNet"
     )
 
-    set_gpu(3)
+    set_gpu("3")
     train_loader, val_loader, test_loader = get_dataloader(args)
     global memory_bank_train
     memory_bank_train = None
