@@ -284,6 +284,8 @@ class ResNet(nn.Module):
         proto, orig_feature, blocks = self.forward_cycle(x, first=True, inter=True)
         if inter_layer:
             cycle_proto = [blocks]
+        elif inter_cycle:
+            cycle_proto = [proto]
 
         recon_feature = []
 
