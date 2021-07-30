@@ -53,6 +53,8 @@ if __name__ == '__main__':
         cycle1_support = cycle_logits[1][0,0:25]
         cycle1_query = cycle_logits[1][0,25:]
 
+        print(cycle0_support.shape)
+        print(cycle0_query.shape)
         U, S, V = torch.pca_lowrank(cycle0_support)
         cycle0_viz = torch.matmul(cycle0_support, V[:,:2])
         print(cycle0_viz)
