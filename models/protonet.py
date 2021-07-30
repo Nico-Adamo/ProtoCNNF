@@ -21,8 +21,6 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
-        self.temp = nn.Parameter(torch.tensor(1.0))
-
     def split_instances(self, data):
         args = self.args
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
@@ -108,17 +106,17 @@ class ProtoNet(nn.Module):
             proto = proto.unsqueeze(1).expand(num_batch, num_query, num_proto, emb_dim)
             proto = proto.contiguous().view(num_batch*num_query, num_proto, emb_dim) # (Nbatch x Nq, Nk, d)
 
-            logits = - torch.sum((proto - query) ** 2, 2) / self.temp
+            logits = - torch.sum((proto - query) ** 2, 2) / self.args.temperature
         else: # cosine similarity: more memory efficient
             proto = F.normalize(proto, dim=-1) # normalize for cosine distance
             query = query.view(num_batch, -1, emb_dim) # (Nbatch,  Nq*Nw, d)
 
             # (num_batch,  num_emb, num_proto) * (num_batch, num_query*num_proto, num_emb) -> (num_batch, num_query*num_proto, num_proto)
             # (Nb, Nq*Np, d) * (Nb, d, Np) -> (Nb, Nq*Nw, Np)
-            logits = torch.bmm(query, proto.permute([0,2,1])) / self.temp
+            logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature
             logits = logits.view(-1, num_proto)
             # (Nb, Np, d), (Nb, d, Np) -> (Nb, Np, Np)
-            logits_support = torch.bmm(proto, proto.permute([0,2,1])) / self.temp
+            logits_support = torch.bmm(proto, proto.permute([0,2,1])) / self.args.temperature
             logits_support = logits.view(-1, num_proto)
 
         return logits, logits_support, support.view(batch_size * n_shot * n_way, emb_dim)
