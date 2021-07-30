@@ -25,6 +25,7 @@ if __name__ == '__main__':
         num_workers = 8,
         multi_gpu = False,
         num_eval_episodes = 1000,
+        augment = False,
         model = "ResNet12",
         bias_shift = True,
         dataset = "MiniImageNet"
