@@ -19,7 +19,7 @@ if __name__ == '__main__':
         ind_layer = 0,
         temperature = 1.0,
         query = 1,
-        shot = 5,
+        shot = 40,
         way = 5,
         episodes_per_epoch = 100,
         num_workers = 8,
@@ -48,17 +48,20 @@ if __name__ == '__main__':
     for i, batch in enumerate(train_loader, 1):
         data, _ = [_.cuda() for _ in batch]
         cycle_logits = model.encoder(data, inter_cycle=True)
-        cycle0_support = cycle_logits[0][0:25]
-        cycle0_query = cycle_logits[0][25:]
-        cycle1_support = cycle_logits[1][0:25]
-        cycle1_query = cycle_logits[1][25:]
+        cycle0_support = cycle_logits[0][0:200]
+        cycle0_query = cycle_logits[0][200:]
+        cycle1_support = cycle_logits[1][0:200]
+        cycle1_query = cycle_logits[1][200:]
 
         U, S, V = torch.pca_lowrank(cycle0_support)
         cycle0_viz = torch.matmul(cycle0_support, V[:,:2])
         U, S, V = torch.pca_lowrank(cycle1_support)
         cycle1_viz = torch.matmul(cycle1_support, V[:,:2])
 
-        f = open("cycle.dat", "w")
+        if i == 1:
+            f = open("cycle.dat", "w")
+        else:
+            f = open("cycle.dat", "a")
         f.write(str(cycle0_viz.detach()))
         f.write("\n")
         f.write(str(cycle1_viz.detach()))
