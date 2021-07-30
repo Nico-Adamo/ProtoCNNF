@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from samplers import CategoriesSampler
 from utils import get_dataloader
-
+from utils import pprint, set_gpu
 # FOR DEBUG
 if __name__ == '__main__':
     restore_from = "models/resnet-feedback-21-bias/max-acc.pth"
@@ -31,6 +31,7 @@ if __name__ == '__main__':
         dataset = "MiniImageNet"
     )
 
+    set_gpu(3)
     train_loader, val_loader, test_loader = get_dataloader(args)
     global memory_bank_train
     memory_bank_train = None
