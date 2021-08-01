@@ -63,7 +63,7 @@ class ProtoNet(nn.Module):
         # organize support/query data
 
         batch_size, n_shot, n_way, n_dim = support.shape
-        if len(self.memory_bank.memory) > 200 and memory_bank == True:
+        if len(self.memory_bank) > 200 and memory_bank == True:
             proto = self.memory_bank.compute_prototypes(support, debug_support = debug_support)
         else:
             proto = support.mean(dim=1)
