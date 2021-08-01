@@ -44,7 +44,7 @@ class ProtoNet(nn.Module):
 
                 # split support query set for few-shot data
                 support_idx, query_idx = self.split_instances(x)
-                debug_support = x[support_idx.flatten()].view(1, args.shot, args.way, 3, 84, 84)
+                debug_support = x[support_idx.flatten()].view(1, self.args.shot, self.args.way, 3, 84, 84)
                 support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
                 query = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
 
