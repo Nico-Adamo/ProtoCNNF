@@ -76,10 +76,12 @@ class MemoryBank(nn.Module):
             memory_support = self._debug_memory.view(batch_size, n_memory, 1, 3, 84, 84).expand(-1, -1, n_way, -1, -1 ,-1)
             support_memory_imgs = torch.cat([debug_support, memory_support], dim=1) # [batch_size, n_shot + n_memory, n_way, 3,84,84]
             print(support_memory_imgs.shape)
-            topk_support = support_memory_imgs.permute(0,2,1,3,4,5).gather(1, ind) # [batch_size, n_way, n_shot, 8, 3,84,84]
-            print(topk_support.shape)
-            sample = topk_support[0][random.randrange(5)]
-            rand_shot = sample.view(n_shot * 8, *(sample.size()[2:])) # [n_shot * 8, 3,84,84]
+            support_t = support_memory_imgs.permute(0,2,1,3,4,5) # [batch_size, n_way, n_shot + n_memory, 3,84,84]
+            topk_support = torch.zeros(n_way, 8, 3, 84, 84)
+            for i in range(n_way):
+                topk_support[i] = torch.gather(support_t[0][i], 0, ind[0][i])
+            print(topk_support.shape) # [n_way, 8, 3, 84, 84]
+            rand_shot = topk_support.view(n_way * 8, *(topk_support.size()[2:])) # [n_way * 8, 3,84,84]
             print(rand_shot.shape)
             grid = make_grid(rand_shot, nrow=8)
             save_image(grid, "memory_images_" + str(random.randrange(5))+".png")
