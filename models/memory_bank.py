@@ -45,12 +45,13 @@ class MemoryBank(nn.Module):
             Memory: [n_way + n_memory, n_dim]
         Output: [batch_size, n_way, n_shot + n_memory]
         """
-        memory_t = memory.permute(0,2,1,3)
-        support_t = support.permute(0,2,1,3)
+        memory_t = memory.permute(0,2,1,3)  # [batch_size, n_way, n_shot + n_memory, n_dim]
+        support_t = support.permute(0,2,1,3) # [batch_size, n_way, n_shot, n_dim]
         memory_t = F.normalize(memory_t, dim=-1)
         support_t = F.normalize(support_t, dim=-1)
+        # [batch_size, n_way, n_shot, n_dim] x [batch_size, n_way, n_dim, n_shot + n_memory] -> # [batch_size, n_way, n_shot, n_shot + n_memory]
         cos_matrix = torch.matmul(support_t, memory_t.permute(0,1,3,2))
-        return cos_matrix.mean(dim=2)
+        return cos_matrix.mean(dim=2) # [batch_size, n_way, n_shot + n_memory]
 
     def compute_prototypes(self, support, debug_support = None):
         """
@@ -63,7 +64,7 @@ class MemoryBank(nn.Module):
         n_memory, _ = memory.shape
         batch_size, n_shot, n_way, n_dim = support.shape
         memory_x = memory.view(batch_size, n_memory, 1, n_dim).expand(-1, -1, n_way, -1)
-        shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_way, n_shot + n_memory, n_dim]
+        shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
         print(n_memory)
         print(shot_memory.shape)
         sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_way, n_shot + n_memory]
