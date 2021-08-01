@@ -64,7 +64,9 @@ class MemoryBank(nn.Module):
         batch_size, n_shot, n_way, n_dim = support.shape
         memory_x = memory.view(batch_size, n_memory, 1, n_dim).expand(-1, -1, n_way, -1)
         shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_way, n_shot + n_memory, n_dim]
-        sim = self.get_similarity_scores(shot_memory, support) # [batch_size, n_way, n_shot, n_shot + n_memory]
+        print(n_memory)
+        print(shot_memory.shape)
+        sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_way, n_shot + n_memory]
         print(sim.shape)
         # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
 
