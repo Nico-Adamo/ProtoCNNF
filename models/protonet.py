@@ -22,7 +22,7 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
-        self.memory_bank = MemoryBank(args.memory_bank_size)
+        self.memory_bank = MemoryBank(args.memory_size)
 
 
     def split_instances(self, data):
