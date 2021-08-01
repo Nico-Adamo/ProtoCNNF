@@ -72,6 +72,7 @@ class MemoryBank(nn.Module):
         print(ind.shape)
         if debug_support is not None:
             print(debug_support.shape)
+            print(self._debug_memory.shape)
             memory_support = self._debug_memory.view(batch_size, n_memory, 1, 3, 84, 84).expand(-1, -1, n_way, -1, -1 ,-1)
             support_memory_imgs = torch.cat([debug_support, memory_support], dim=1) # [batch_size, n_shot + n_memory, n_way, 3,84,84]
             print(support_memory_imgs.shape)
@@ -101,4 +102,4 @@ class MemoryBank(nn.Module):
         elif self._debug_memory.size(0) < self.size:
             self._debug_memory = torch.cat((self._debug_memory, data))
         else:
-            self._debug_memory = torch.cat((self._debug_memory[data.shape[0]:], self.memory))
+            self._debug_memory = torch.cat((self._debug_memory[data.shape[0]:], self._debug_memory))
