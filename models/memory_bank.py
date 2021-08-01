@@ -8,6 +8,7 @@ from torchvision.utils import make_grid, save_image
 
 class MemoryBank(nn.Module):
     def __init__(self, size):
+        super().__init__()
         self.size = size
         self.memory = None
         self.augment_size = 8 # "Make everything n-shot"
