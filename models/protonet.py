@@ -70,7 +70,7 @@ class ProtoNet(nn.Module):
 
         num_batch = proto.shape[0]
         num_proto = proto.shape[1]
-        num_query = n_shot * n_way
+        num_query = query.shape[1] * n_way
 
         # query: (num_batch, num_query, num_proto, num_emb)
         # proto: (num_batch, num_proto, num_emb)
