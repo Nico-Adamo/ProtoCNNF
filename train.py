@@ -137,32 +137,9 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, _ = [_.cuda() for _ in batch]
 
-                if args.inter_layer_loss:
-                    cycle_logits, cycle_embs, recon_embs = model(data, inter_cycle = True, inter_layer = True)
-                    loss = 0
-                    for j in range(args.cycles):
-                        for k in range(6 - args.ind_block):
-                            loss += F.mse_loss(cycle_embs[j][k], recon_embs[j][k]) / ((args.cycles) * (6 - args.ind_block)) * 0.1
-                        loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
-                    loss += F.cross_entropy(cycle_logits[args.cycles], label) / (args.cycles + 1)
-                    logits = cycle_logits[-1]
-                elif args.inter_cycle_loss:
-                    cycle_logits = model(data, inter_cycle=True)
-                    loss = 0
-                    for j in range(args.cycles + 1):
-                        loss += F.cross_entropy(cycle_logits[j], label) / (args.cycles + 1)
-                    logits = cycle_logits[-1]
-                else:
-                    logits, logits_support, memory_addition = model(data)
-                    memory_addition = memory_addition.detach()
-                    if memory_bank_train == None:
-                        memory_bank_train = memory_addition
-                    elif memory_bank_train.shape[0] > args.memory_size:
-                        memory_bank_train = torch.cat([memory_bank_train[memory_addition.shape[0]:], memory_addition], dim=0)
-                    else:
-                        memory_bank_train = torch.cat([memory_bank_train, memory_addition], dim=0)
+                logits = model(data)
 
-                    loss = F.cross_entropy(logits, label) + 0.2 * F.cross_entropy(logits_support, label_support)
+                loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
@@ -187,8 +164,8 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
-                logits, logits_support = model(data)
-                loss = F.cross_entropy(logits, label) + 0.2 * F.cross_entropy(logits_support, label_support)
+                logits = model(data)
+                loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
 
@@ -207,8 +184,8 @@ if __name__ == '__main__':
                     for i, batch in enumerate(test_loader, 1):
                         data, _ = [_.cuda() for _ in batch]
 
-                        logits, logits_support = model(data)
-                        loss = F.cross_entropy(logits, label) + 0.2 * F.cross_entropy(logits_support, label_support)
+                        logits = model(data)
+                        loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)
                         ave_acc.add(acc)
