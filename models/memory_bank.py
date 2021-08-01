@@ -69,10 +69,12 @@ class MemoryBank(nn.Module):
         # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
 
         topk, ind = torch.topk(sim, 8, dim=-1) # 8 = num of support examples per class
+        print(ind.shape)
         if debug_support is not None:
             print(debug_support.shape)
             memory_support = self._debug_memory.view(batch_size, n_memory, 1, 3, 84, 84).expand(-1, -1, n_way, -1, -1 ,-1)
-            support_memory_imgs = torch.cat([debug_support, memory_support], dim=1) # [batch_size, n_way, n_shot, n_shot + n_memory, 3,84,84]
+            support_memory_imgs = torch.cat([debug_support, memory_support], dim=1) # [batch_size, n_shot + n_memory, n_way, 3,84,84]
+            print(support_memory_imgs.shape)
             topk_support = support_memory_imgs[ind] # [batch_size, n_way, n_shot, 8, 3,84,84]
             print(topk_support.shape)
             sample = topk_support[0][random.randrange(5)]
