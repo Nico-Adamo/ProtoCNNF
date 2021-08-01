@@ -24,7 +24,7 @@ def prepare_label(args):
     label_support = torch.arange(args.way, dtype=torch.int16)
 
     label = label.type(torch.LongTensor)
-    label_support = label_support.type(torch.LongTensor())
+    label_support = label_support.type(torch.LongTensor)
 
     if torch.cuda.is_available():
         label = label.cuda()
