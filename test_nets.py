@@ -28,7 +28,8 @@ if __name__ == '__main__':
         augment = False,
         model = "ResNet12",
         bias_shift = True,
-        dataset = "MiniImageNet"
+        dataset = "MiniImageNet",
+        memory_bank_size = 500
     )
 
     set_gpu("3")
@@ -50,5 +51,5 @@ if __name__ == '__main__':
             data, target = [_.cuda() for _ in batch]
             logits = model(data)
 
-            if i == 12:
+            if i == 15:
                 break
