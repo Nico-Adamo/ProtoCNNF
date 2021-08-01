@@ -9,7 +9,7 @@ from utils import get_dataloader
 from utils import pprint, set_gpu, count_acc
 # FOR DEBUG
 if __name__ == '__main__':
-    restore_from = "models/resnet-feedback-21/max-acc.pth"
+    restore_from = "models/resnet-feedback-21-bias/max-acc.pth"
 
     torch.manual_seed(0)
     args = Namespace(
