@@ -137,7 +137,8 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, _ = [_.cuda() for _ in batch]
 
-                logits = model(data)
+                memory_bank = True if epoch >= 10 else False
+                logits = model(data, epoch = epoch, memory_bank = memory_bank)
 
                 loss = F.cross_entropy(logits, label)
 
