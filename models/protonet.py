@@ -59,7 +59,6 @@ class ProtoNet(nn.Module):
 
     def _forward(self, support, query, memory_bank = False, debug_support = None):
         emb_dim = support.size(-1)
-        print(support.shape)
         # organize support/query data
 
         batch_size, n_shot, n_way, n_dim = support.shape
