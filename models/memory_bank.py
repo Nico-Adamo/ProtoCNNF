@@ -69,7 +69,7 @@ class MemoryBank(nn.Module):
         sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_way, n_shot + n_memory]
         # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
 
-        topk, ind = torch.topk(sim, 8, dim=-1) # 8 = num of support examples per class
+        topk, ind = torch.topk(sim, 16, dim=-1) # 8 = num of support examples per class
         print(ind.shape)
         if debug_support is not None and random.randrange(10) == 4:
             print(debug_support.shape)
@@ -78,13 +78,13 @@ class MemoryBank(nn.Module):
             support_memory_imgs = torch.cat([debug_support, memory_support], dim=1) # [batch_size, n_shot + n_memory, n_way, 3,84,84]
             print(support_memory_imgs.shape)
             support_t = support_memory_imgs.permute(0,2,1,3,4,5) # [batch_size, n_way, n_shot + n_memory, 3,84,84]
-            topk_support = torch.zeros(n_way, 8, 3, 84, 84)
+            topk_support = torch.zeros(n_way, 16, 3, 84, 84)
             for i in range(n_way):
                 topk_support[i] = support_t[0][i][ind[0][i]]
             print(topk_support.shape) # [n_way, 8, 3, 84, 84]
-            rand_shot = topk_support.view(n_way * 8, *(topk_support.size()[2:])) # [n_way * 8, 3,84,84]
+            rand_shot = topk_support.view(n_way * 16, *(topk_support.size()[2:])) # [n_way * 8, 3,84,84]
             print(rand_shot.shape)
-            grid = make_grid(rand_shot, nrow=8)
+            grid = make_grid(rand_shot, nrow=16)
             save_image(grid, "memory_images_epoch20_" + str(self._debug_count)+".png")
             self._debug_count += 1
         res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory).cuda())
