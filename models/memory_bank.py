@@ -25,7 +25,7 @@ class MemoryBank(nn.Module):
         elif self.memory.size(0) < self.size:
             self.memory = torch.cat([self.memory, emb], dim=0)
         else:
-            self.memory = torch.cat([self.memory[emb.shape[0]:], self.memory], dim=0)
+            self.memory = torch.cat([self.memory[emb.shape[0]:], emb], dim=0)
 
     def get_memory(self):
         return self.memory
@@ -106,5 +106,4 @@ class MemoryBank(nn.Module):
         elif self._debug_memory.size(0) < self.size:
             self._debug_memory = torch.cat((self._debug_memory, data))
         else:
-            print(self._debug_memory.size(0))
-            self._debug_memory = torch.cat((self._debug_memory[data.shape[0]:], self._debug_memory))
+            self._debug_memory = torch.cat((self._debug_memory[data.shape[0]:], data))
