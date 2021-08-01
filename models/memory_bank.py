@@ -11,7 +11,7 @@ class MemoryBank(nn.Module):
         super().__init__()
         self.size = size
         self.memory = None
-        self.augment_size = 8 # "Make everything n-shot"
+        self.augment_size = 16 # "Make everything n-shot"
         # Possible self.bias to add to cosine matrix?
 
         self._debug_memory = None
@@ -68,12 +68,12 @@ class MemoryBank(nn.Module):
         shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
         sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_way, n_shot + n_memory]
 
-        mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.01]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
+        mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.2]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
         sim = sim * mask_weight
 
         # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
 
-        topk, ind = torch.topk(sim, 16, dim=-1) # 8 = num of support examples per class
+        topk, ind = torch.topk(sim, self.augment_size, dim=-1) # 8 = num of support examples per class
         if debug_support is not None and random.randrange(10) == 4:
             memory_support = self._debug_memory.view(batch_size, n_memory, 1, 3, 84, 84).expand(-1, -1, n_way, -1, -1 ,-1)
             support_memory_imgs = torch.cat([debug_support, memory_support], dim=1) # [batch_size, n_shot + n_memory, n_way, 3,84,84]
