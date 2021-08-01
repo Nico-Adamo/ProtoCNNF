@@ -85,7 +85,7 @@ class MemoryBank(nn.Module):
             rand_shot = topk_support.view(n_way * 8, *(topk_support.size()[2:])) # [n_way * 8, 3,84,84]
             print(rand_shot.shape)
             grid = make_grid(rand_shot, nrow=8)
-            save_image(grid, "memory_images_epoch0_" + str(self._debug_count)+".png")
+            save_image(grid, "memory_images_epoch20_" + str(self._debug_count)+".png")
             self._debug_count += 1
         res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory).cuda())
         sim = res.scatter(2, ind, topk) # Make all weights but top-k 0
