@@ -79,7 +79,7 @@ class MemoryBank(nn.Module):
             support_t = support_memory_imgs.permute(0,2,1,3,4,5) # [batch_size, n_way, n_shot + n_memory, 3,84,84]
             topk_support = torch.zeros(n_way, 8, 3, 84, 84)
             for i in range(n_way):
-                topk_support[i] = torch.gather(support_t[0][i], 0, ind[0][i])
+                topk_support[i] = support_t[0][i][ind[0][i]]
             print(topk_support.shape) # [n_way, 8, 3, 84, 84]
             rand_shot = topk_support.view(n_way * 8, *(topk_support.size()[2:])) # [n_way * 8, 3,84,84]
             print(rand_shot.shape)
