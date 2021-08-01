@@ -51,5 +51,5 @@ if __name__ == '__main__':
             data, target = [_.cuda() for _ in batch]
             logits = model(data)
 
-            if i == 15:
+            if i == 150:
                 break

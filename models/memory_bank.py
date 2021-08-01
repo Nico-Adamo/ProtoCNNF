@@ -71,7 +71,7 @@ class MemoryBank(nn.Module):
 
         topk, ind = torch.topk(sim, 8, dim=-1) # 8 = num of support examples per class
         print(ind.shape)
-        if debug_support is not None:
+        if debug_support is not None and random.randrange(10) == 4:
             print(debug_support.shape)
             print(self._debug_memory.shape)
             memory_support = self._debug_memory.view(batch_size, n_memory, 1, 3, 84, 84).expand(-1, -1, n_way, -1, -1 ,-1)
