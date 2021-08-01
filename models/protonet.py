@@ -53,7 +53,7 @@ class ProtoNet(nn.Module):
 
             # Update memory bank:
             self.memory_bank.add_memory(support.view(-1, 640).detach())
-            self.memory_bank._debug_add_memory(debug_support)
+            self.memory_bank._debug_add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
 
             return logits
 
