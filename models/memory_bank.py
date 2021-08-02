@@ -10,11 +10,11 @@ class MemoryBank(nn.Module):
     def __init__(self, size):
         super().__init__()
         self.size = size
-        self.memory = torch.tensor([])
+        self.memory = torch.tensor([]).cuda()
         self.augment_size = 16 # "Make everything n-shot"
         # Possible self.bias to add to cosine matrix?
 
-        self._debug_memory = torch.tensor([])
+        self._debug_memory = torch.tensor([]).cuda()
         self._debug_count = 0
 
     def add_memory(self, data):
