@@ -21,7 +21,7 @@ class MemoryBank(nn.Module):
         # Add memory to the end of the memory bank
         # emb: [batch_size, emb_size]
         emb_param = [nn.Parameter(emb[i], requires_grad=True) for i in range(emb.size(0))]
-        if self.memory.size(0) < self.size:
+        if len(self.memory) < self.size:
             self.memory.extend(emb_param)
         else:
             self.memory.extend(emb_param)
@@ -34,7 +34,7 @@ class MemoryBank(nn.Module):
         self.memory = nn.ParameterList([])
 
     def __len__(self):
-        return self.memory.size(0)
+        return len(self.memory)
 
     def get_similarity_scores(self, support, memory):
         """
