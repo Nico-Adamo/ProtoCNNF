@@ -314,7 +314,7 @@ class ResNet(nn.Module):
         elif inter_cycle:
             return cycle_proto
         else:
-            return cycle_proto[-1]
+            return proto
 
 if __name__ == "__main__":
     model = ResNet(ind_block = 2, cycles = 1).cuda()
