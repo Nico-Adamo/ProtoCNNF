@@ -7,10 +7,9 @@ from torchvision.utils import make_grid, save_image
 
 
 class MemoryBank(nn.Module):
-    def __init__(self, protonet, size):
+    def __init__(self, size):
         super().__init__()
         self.size = size
-        self.protonet = protonet
         self.memory = torch.tensor([])
         self.augment_size = 16 # "Make everything n-shot"
         # Possible self.bias to add to cosine matrix?
@@ -53,14 +52,14 @@ class MemoryBank(nn.Module):
         cos_matrix = torch.matmul(support_t, memory_t.permute(0,1,3,2))
         return cos_matrix.mean(dim=2) # [batch_size, n_way, n_shot + n_memory]
 
-    def compute_prototypes(self, support, debug_support = None):
+    def compute_prototypes(self, support, memory_encoded, debug_support = None):
         """
         Augment the support examples with the memory bank, and compute the prototypes
            self.memory: [n_memory, n_dim]
            support: [batch_size, n_shot, n_way, n_dim]
            return: [batch_size, n_way, n_dim]
         """
-        memory = self.protonet.encoder(self._debug_memory.squeeze(0))[0]
+        memory = memory_encoded
 
         n_memory, _ = memory.shape
         batch_size, n_shot, n_way, n_dim = support.shape

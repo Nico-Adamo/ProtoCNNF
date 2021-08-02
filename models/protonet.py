@@ -22,7 +22,7 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
-        self.memory_bank = MemoryBank(self, args.memory_size)
+        self.memory_bank = MemoryBank(args.memory_size)
 
 
     def split_instances(self, data):
@@ -39,6 +39,9 @@ class ProtoNet(nn.Module):
             cycle_instance_embs, recon_embs = self.encoder(x, inter_cycle=True, inter_layer=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             cycle_logits = []
+
+            # encode memory bank
+            memory_encoded = self.encoder(self.memory_bank._debug_memory.squeeze(0))[0]
             for cycle in range(self.args.cycles + 1):
                 instance_embs = cycle_instance_embs[cycle][-1]
 
@@ -48,7 +51,7 @@ class ProtoNet(nn.Module):
                 support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
                 query = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
 
-                logits = self._forward(support, query, memory_bank = memory_bank) # add debug_support = debug_support to visualize memory bank
+                logits = self._forward(support, query, memory_bank = memory_bank, memory_encoded = memory_encoded) # add debug_support = debug_support to visualize memory bank
                 cycle_logits.append(logits)
 
             # Update memory bank:
@@ -57,13 +60,13 @@ class ProtoNet(nn.Module):
 
             return logits
 
-    def _forward(self, support, query, memory_bank = False, debug_support = None):
+    def _forward(self, support, query, memory_bank = False, memory_encoded = None, debug_support = None):
         emb_dim = support.size(-1)
         # organize support/query data
 
         batch_size, n_shot, n_way, n_dim = support.shape
         if len(self.memory_bank) > 200 and memory_bank == True:
-            proto = self.memory_bank.compute_prototypes(support, debug_support = debug_support)
+            proto = self.memory_bank.compute_prototypes(support, memory_encoded, debug_support = debug_support)
         else:
             proto = support.mean(dim=1)
 
