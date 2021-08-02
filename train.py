@@ -139,7 +139,7 @@ if __name__ == '__main__':
                 data, _ = [_.cuda() for _ in batch]
 
                 memory_bank = True if epoch >= 10 else False
-                logits, memory_bank_add = model(data, epoch = epoch, memory_bank = memory_bank)
+                logits = model(data, epoch = epoch, memory_bank = memory_bank)
 
                 loss = F.cross_entropy(logits, label)
 
@@ -154,9 +154,6 @@ if __name__ == '__main__':
                 optimizer.step()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
 
-                # Update memory bank:
-                model.memory_bank.add_memory(memory_bank_add)
-                # self.memory_bank._debug_add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
 
 
                 proto = None; logits = None; loss = None

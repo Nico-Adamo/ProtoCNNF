@@ -22,7 +22,7 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
-        self.memory_bank = MemoryBank(args.memory_size)
+        self.memory_bank = MemoryBank(args.memory_size, self.encoder)
 
 
     def split_instances(self, data):
@@ -51,10 +51,11 @@ class ProtoNet(nn.Module):
                 logits = self._forward(support, query, memory_bank = memory_bank) # add debug_support = debug_support to visualize memory bank
                 cycle_logits.append(logits)
 
-            if self.training:
-                return logits, support.view(-1, 640).detach()
-            else:
-                return logits
+            # Update memory bank:
+            self.memory_bank.add_memory(support.view(-1,640))
+            self.memory_bank._debug_add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
+
+            return logits
 
     def _forward(self, support, query, memory_bank = False, debug_support = None):
         emb_dim = support.size(-1)
