@@ -97,7 +97,6 @@ if __name__ == '__main__':
         print("Restoring from {}".format(args.restore_from))
         checkpoint = torch.load(args.restore_from)
         checkpoint = {k: v for k, v in checkpoint.items() if k in model.state_dict()}
-        checkpoint["memory_bank.memory"] = torch.tensor([])
         model.load_state_dict(checkpoint)
 
     if args.multi_gpu:
