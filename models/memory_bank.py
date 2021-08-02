@@ -10,7 +10,7 @@ class MemoryBank(nn.Module):
     def __init__(self, size):
         super().__init__()
         self.size = size
-        self.memory = None
+        self.memory = nn.Parameter(torch.tensor([]))
         self.augment_size = 16 # "Make everything n-shot"
         # Possible self.bias to add to cosine matrix?
 
@@ -20,9 +20,7 @@ class MemoryBank(nn.Module):
     def add_memory(self, emb):
         # Add memory to the end of the memory bank
         # emb: [batch_size, emb_size]
-        if self.memory is None:
-            self.memory = emb
-        elif self.memory.size(0) < self.size:
+        if self.memory.size(0) < self.size:
             self.memory = torch.cat([self.memory, emb], dim=0)
         else:
             self.memory = torch.cat([self.memory[emb.shape[0]:], emb], dim=0)
@@ -31,11 +29,9 @@ class MemoryBank(nn.Module):
         return self.memory
 
     def reset(self):
-        self.memory = None
+        self.memory = nn.Parameter(torch.tensor([]))
 
     def __len__(self):
-        if self.memory is None:
-            return 0
         return self.memory.size(0)
 
     def get_similarity_scores(self, support, memory):
