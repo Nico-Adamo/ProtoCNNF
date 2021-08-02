@@ -10,7 +10,7 @@ class MemoryBank(nn.Module):
     def __init__(self, size):
         super().__init__()
         self.size = size
-        self.memory = nn.Parameter(torch.tensor([], dtype=torch.float, device="cuda"))
+        self.memory = nn.Parameter(torch.tensor([]))
         self.augment_size = 16 # "Make everything n-shot"
         # Possible self.bias to add to cosine matrix?
 
@@ -21,9 +21,9 @@ class MemoryBank(nn.Module):
         # Add memory to the end of the memory bank
         # emb: [batch_size, emb_size]
         if self.memory.size(0) < self.size:
-            self.memory = nn.Parameter(torch.cat([self.memory, emb], dim=0, dtype=torch.float, device="cuda"))
+            self.memory = nn.Parameter(torch.cat([self.memory, emb], dim=0))
         else:
-            self.memory = nn.Parameter(torch.cat([self.memory[emb.shape[0]:], emb], dim=0, dtype=torch.float, device="cuda"))
+            self.memory = nn.Parameter(torch.cat([self.memory[emb.shape[0]:], emb], dim=0))
 
     def get_memory(self):
         return self.memory
