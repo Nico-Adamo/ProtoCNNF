@@ -7,10 +7,10 @@ from torchvision.utils import make_grid, save_image
 
 
 class MemoryBank(nn.Module):
-    def __init__(self, size, encoder):
+    def __init__(self, protonet, size):
         super().__init__()
         self.size = size
-        self.encoder = encoder
+        self.protonet = protonet
         self.memory = torch.tensor([])
         self.augment_size = 16 # "Make everything n-shot"
         # Possible self.bias to add to cosine matrix?
@@ -60,7 +60,7 @@ class MemoryBank(nn.Module):
            support: [batch_size, n_shot, n_way, n_dim]
            return: [batch_size, n_way, n_dim]
         """
-        memory = self.encoder(self._debug_memory.squeeze(0))[0]
+        memory = self.protonet.encoder(self._debug_memory.squeeze(0))[0]
 
         n_memory, _ = memory.shape
         batch_size, n_shot, n_way, n_dim = support.shape
