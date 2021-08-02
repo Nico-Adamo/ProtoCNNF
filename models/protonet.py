@@ -51,11 +51,10 @@ class ProtoNet(nn.Module):
                 logits = self._forward(support, query, memory_bank = memory_bank) # add debug_support = debug_support to visualize memory bank
                 cycle_logits.append(logits)
 
-            # Update memory bank:
-            self.memory_bank.add_memory(support.view(-1, 640).detach())
-            # self.memory_bank._debug_add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
-
-            return logits
+            if self.training:
+                return logits, support.view(-1, 640).detach()
+            else:
+                return logits
 
     def _forward(self, support, query, memory_bank = False, debug_support = None):
         emb_dim = support.size(-1)
