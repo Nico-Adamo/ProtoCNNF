@@ -41,7 +41,7 @@ class ProtoNet(nn.Module):
             cycle_logits = []
 
             # encode memory bank
-            memory_encoded = self.encoder(self.memory_bank._debug_memory.squeeze(0))[0]
+            memory_encoded = self.encoder(self.memory_bank._debug_memory.squeeze(0))[0] if memory_bank else None
             for cycle in range(self.args.cycles + 1):
                 instance_embs = cycle_instance_embs[cycle][-1]
 
@@ -55,8 +55,9 @@ class ProtoNet(nn.Module):
                 cycle_logits.append(logits)
 
             # Update memory bank:
-            self.memory_bank.add_memory(support.view(-1,640))
-            self.memory_bank._debug_add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
+            if self.training:
+                self.memory_bank.add_memory(support.view(-1,640))
+                self.memory_bank._debug_add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
 
             return logits
 
