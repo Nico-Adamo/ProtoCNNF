@@ -178,7 +178,7 @@ class WideResNet(nn.Module):
         if ('backward' in step):
             x = self.flatten(x, step='backward')
             x = F.interpolate(x, scale_factor=21)
-            x = self.relu(self.ln1(x, step='backward'), step='backward')
+            x = self.ln1(x, step='backward')
 
         if (self.ind_block==0):
             if ('forward' in step):
@@ -214,7 +214,7 @@ class WideResNet(nn.Module):
                         x = block(x, step='backward')
 
         if ('forward' in step):
-            x = self.relu(self.ln1(x))
+            x = self.ln1(x)
             x = F.avg_pool2d(x, 21)
             x = self.flatten(x, step='forward')
 
@@ -245,20 +245,27 @@ class WideResNet(nn.Module):
             BasicBlock.relu2.reset()
             BasicBlock.dropout.reset()
 
-    def forward(self, x):
+    def forward(self, x, inter_cycle = False):
         self.reset()
         proto, orig_feature = self.forward_cycle(x, first=True, inter=True)
         ff_prev = orig_feature
+        if inter_cycle:
+            cycle_proto = [proto]
 
         for i_cycle in range(self.cycles):
             # feedback
-            recon = self.forward_cycle(proto, step='backward')
+            recon, blocks_recon = self.forward_cycle(proto, step='backward', first=False, inter=True)
             # feedforward
             ff_current = ff_prev + self.res_param * (recon - ff_prev)
-            proto = self.forward_cycle(ff_current, first=False)
+            proto, blocks = self.forward_cycle(ff_current, first=False, inter=True)
+            if inter_cycle:
+                cycle_proto.append(proto)
             ff_prev = ff_current
 
-        return proto
+        if inter_cycle:
+            return cycle_proto
+        else:
+            return proto
 
 if __name__ == "__main__":
     model = WideResNet(ind_block = 2, cycles = 2, ind_layer = 2).cuda()

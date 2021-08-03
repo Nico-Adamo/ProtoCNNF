@@ -279,12 +279,10 @@ class ResNet(nn.Module):
         self.layer4.dropout.reset()
         self.layer4.maxpool.reset()
 
-    def forward(self, x, inter_cycle = False, inter_layer = False):
+    def forward(self, x, inter_cycle = False):
         self.reset()
         proto, orig_feature, blocks = self.forward_cycle(x, first=True, inter=True)
-        if inter_layer:
-            cycle_proto = [blocks]
-        elif inter_cycle:
+        if inter_cycle:
             cycle_proto = [proto]
 
         recon_feature = []
@@ -302,16 +300,11 @@ class ResNet(nn.Module):
             # feedforward
             ff_current = ff_prev + self.res_param * (recon - ff_prev)
             proto, blocks = self.forward_cycle(ff_current, first=False, inter=True)
-            if inter_layer:
-                cycle_proto.append(blocks)
-                recon_feature.append(blocks_recon)
-            else:
+            if inter_cycle:
                 cycle_proto.append(proto)
             ff_prev = ff_current
 
-        if inter_layer:
-            return cycle_proto, recon_feature
-        elif inter_cycle:
+        if inter_cycle:
             return cycle_proto
         else:
             return proto

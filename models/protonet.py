@@ -36,14 +36,14 @@ class ProtoNet(nn.Module):
         else:
             # feature extraction
             x = x.squeeze(0)
-            cycle_instance_embs, recon_embs = self.encoder(x, inter_cycle=True, inter_layer=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
+            cycle_instance_embs = self.encoder(x, inter_cycle=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             cycle_logits = []
 
             # encode memory bank
             memory_encoded = self.encoder(self.memory_bank._debug_memory.squeeze(0))[0] if memory_bank else None
             for cycle in range(self.args.cycles + 1):
-                instance_embs = cycle_instance_embs[cycle][-1]
+                instance_embs = cycle_instance_embs[cycle]
 
                 # split support query set for few-shot data
                 support_idx, query_idx = self.split_instances(x)
