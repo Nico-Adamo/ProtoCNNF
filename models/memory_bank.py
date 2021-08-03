@@ -70,7 +70,10 @@ class MemoryBank(nn.Module):
 
         # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
 
-        topk, ind = torch.topk(sim, self.augment_size, dim=-1) # 8 = num of support examples per class
+        # topk, ind = torch.topk(sim, self.augment_size, dim=-1) # 8 = num of support examples per class
+        # res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory).cuda())
+        # sim = res.scatter(2, ind, topk) # Make all weights but top-k 0
+
         if debug_support is not None and random.randrange(10) == 4:
             memory_support = self._debug_memory.view(batch_size, n_memory, 1, 3, 84, 84).expand(-1, -1, n_way, -1, -1 ,-1)
             support_memory_imgs = torch.cat([debug_support, memory_support], dim=1) # [batch_size, n_shot + n_memory, n_way, 3,84,84]
@@ -82,8 +85,6 @@ class MemoryBank(nn.Module):
             grid = make_grid(rand_shot, nrow=16)
             save_image(grid, "memory_images_1500_" + str(self._debug_count)+".png")
             self._debug_count += 1
-        res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory).cuda())
-        sim = res.scatter(2, ind, topk) # Make all weights but top-k 0
 
         # mask_thresh = (sim > 0.75).float()
         # sim = sim * mask_thresh + 1e-8

@@ -72,6 +72,7 @@ if __name__ == '__main__':
     parser.add_argument('--ind-block', type=int, default=1)
     parser.add_argument('--use-cosine-similarity', action='store_true', default=False)
     parser.add_argument('--memory-size', type=int, default=256)
+    parser.add_argument('--memory-start', type=int, default=0)
 
     parser.add_argument('--cycles', type=int, default = 2)
 
@@ -126,6 +127,7 @@ if __name__ == '__main__':
     label, label_support = prepare_label(args)
 
     for epoch in range(1, args.max_epoch + 1):
+        memory_bank = True if epoch >= args.memory_start else False
         print("Epoch " + str(epoch))
         lr_scheduler.step()
 
@@ -137,7 +139,6 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, _ = [_.cuda() for _ in batch]
 
-                memory_bank = True if epoch >= 10 else False
                 logits = model(data, epoch = epoch, memory_bank = memory_bank)
 
                 loss = F.cross_entropy(logits, label)
@@ -167,7 +168,6 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
-                memory_bank = True if epoch >= 10 else False
 
                 logits = model(data, memory_bank = memory_bank)
                 loss = F.cross_entropy(logits, label)
@@ -188,7 +188,6 @@ if __name__ == '__main__':
                 with torch.no_grad():
                     for i, batch in enumerate(test_loader, 1):
                         data, _ = [_.cuda() for _ in batch]
-                        memory_bank = True if epoch >= 10 else False
 
                         logits = model(data, memory_bank = memory_bank)
                         loss = F.cross_entropy(logits, label)
