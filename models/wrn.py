@@ -254,10 +254,10 @@ class WideResNet(nn.Module):
 
         for i_cycle in range(self.cycles):
             # feedback
-            recon, blocks_recon = self.forward_cycle(proto, step='backward', first=False, inter=True)
+            recon = self.forward_cycle(proto, step='backward', first=False)
             # feedforward
             ff_current = ff_prev + self.res_param * (recon - ff_prev)
-            proto, blocks = self.forward_cycle(ff_current, first=False, inter=True)
+            proto = self.forward_cycle(ff_current, first=False)
             if inter_cycle:
                 cycle_proto.append(proto)
             ff_prev = ff_current
