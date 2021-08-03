@@ -167,7 +167,9 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
-                logits = model(data)
+                memory_bank = True if epoch >= 10 else False
+
+                logits = model(data, memory_bank = memory_bank)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -186,8 +188,9 @@ if __name__ == '__main__':
                 with torch.no_grad():
                     for i, batch in enumerate(test_loader, 1):
                         data, _ = [_.cuda() for _ in batch]
+                        memory_bank = True if epoch >= 10 else False
 
-                        logits = model(data)
+                        logits = model(data, memory_bank = memory_bank)
                         loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)
