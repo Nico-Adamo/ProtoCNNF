@@ -43,6 +43,14 @@ class Classifier(nn.Module):
         proto = proto.reshape(self.args.shot, way, -1).mean(dim=0)
         query = self.encoder(data_query,  **kwargs)
 
+        num_batch = proto.shape[0]
+        num_proto = proto.shape[1]
+        num_query = query.shape[1] * self.args.way
+
+        if self.args.bias_shift:
+            shift_embedding = (proto.mean(dim=1) - query.view(num_batch, num_query, -1).mean(dim=1) ).unsqueeze(1) # (num_batch, 1, num_emb)
+            query = query + shift_embedding
+
         logits_dist = euclidean_metric(query, proto)
         logits_sim = torch.mm(query, F.normalize(proto, p=2, dim=-1).t())
         return logits_dist, logits_sim
