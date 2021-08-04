@@ -11,7 +11,8 @@ python3 pretrain.py --max-epoch 100 \
                  --ind-block 2 \
                  --ind-layer 2 \
                  --bias-shift \
-                 --cycles 1
+                 --cycles 1 \
+                 --wandb
 
 # try with max acc rather than last epoch
 python3 train.py --max-epoch 200 \
@@ -29,5 +30,5 @@ python3 train.py --max-epoch 200 \
                  --model "WRN28" \
                  --bias-shift \
                  --use-cosine-similarity \
-                 --memory-size 0
+                 --memory-size 0 \
                  --project "CNNF-Prototype-5shot"

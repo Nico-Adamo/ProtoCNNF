@@ -50,11 +50,11 @@ if __name__ == '__main__':
     else:
         wandb.init(project=args.project, config=args, mode="disabled")
 
-    trainset = MiniImageNet('train', augment=True)
+    trainset = MiniImageNet('train', args, augment=True)
     train_loader = DataLoader(dataset=trainset, batch_size = 16, shuffle=True,
                               num_workers=8, pin_memory=False)
 
-    valset = MiniImageNet('val')
+    valset = MiniImageNet('val', args)
     val_sampler = CategoriesSampler(valset.label, 200,
                                     valset.num_class, 1 + args.query)
     val_loader = DataLoader(dataset=valset, batch_sampler=val_sampler,
