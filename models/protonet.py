@@ -39,9 +39,9 @@ class ProtoNet(nn.Module):
             cycle_instance_embs = self.encoder(x, inter_cycle=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             cycle_logits = []
-
+            memory_bank = True if len(self.memory_bank) > 100 and memory_bank else False
             # encode memory bank
-            memory_encoded = self.encoder(self.memory_bank._debug_memory.squeeze(0))[0] if memory_bank else None
+            memory_encoded = self.encoder(self.memory_bank._debug_memory) if memory_bank else None
             for cycle in range(self.args.cycles + 1):
                 instance_embs = cycle_instance_embs[cycle]
 
@@ -66,7 +66,7 @@ class ProtoNet(nn.Module):
         # organize support/query data
 
         batch_size, n_shot, n_way, n_dim = support.shape
-        if len(self.memory_bank) > 200 and memory_bank == True:
+        if memory_bank == True:
             proto = self.memory_bank.compute_prototypes(support, memory_encoded, debug_support = debug_support)
         else:
             proto = support.mean(dim=1)
