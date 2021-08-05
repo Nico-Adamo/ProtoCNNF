@@ -45,7 +45,7 @@ class MemoryBank(nn.Module):
         memory_t = memory.permute(0,2,1,3)  # [batch_size, n_way, n_shot + n_memory, n_dim]
         support_t = support.permute(0,2,1,3) # [batch_size, n_way, n_shot, n_dim]
         memory_t = F.normalize(memory_t, dim=-1)
-        support_t = F.normalize(support_t, dim=-1)
+        # support_t = F.normalize(support_t, dim=-1)
         # [batch_size, n_way, n_shot, n_dim] x [batch_size, n_way, n_dim, n_shot + n_memory] -> # [batch_size, n_way, n_shot, n_shot + n_memory]
         cos_matrix = torch.matmul(support_t, memory_t.permute(0,1,3,2))
         return cos_matrix.mean(dim=2) # [batch_size, n_way, n_shot + n_memory]
