@@ -90,9 +90,9 @@ class MemoryBank(nn.Module):
 
         # Make all weights not in the class 0
         for i in range(n_way):
-            class_num = topk_support[0][i][0]
+            class_num = topk_support[i][0]
             for j in range(self.augment_size):
-                if topk_support[0][i][j] != class_num:
+                if topk_support[i][j] != class_num:
                     sim[0][i][ind[0][i][j]] = 0
 
         # mask_thresh = (sim > 0.75).float()
