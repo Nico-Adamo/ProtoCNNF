@@ -75,15 +75,16 @@ class MemoryBank(nn.Module):
         sim = res.scatter(2, ind, topk) # Make all weights but top-k 0
 
         if debug_support is not None and random.randrange(10) == 4:
-            memory_support = self._debug_memory.view(batch_size, n_memory, 1, 3, 84, 84).expand(-1, -1, n_way, -1, -1 ,-1)
+            memory_support = self._debug_memory.view(batch_size, n_memory, 1).expand(-1, -1, n_way)
             support_memory_imgs = torch.cat([debug_support, memory_support], dim=1) # [batch_size, n_shot + n_memory, n_way, 3,84,84]
-            support_t = support_memory_imgs.permute(0,2,1,3,4,5) # [batch_size, n_way, n_shot + n_memory, 3,84,84]
-            topk_support = torch.zeros(n_way, 16, 3, 84, 84)
+            support_t = support_memory_imgs.permute(0,2,1) # [batch_size, n_way, n_shot + n_memory, 3,84,84]
+            topk_support = torch.zeros(n_way, self.augment_size)
             for i in range(n_way):
                 topk_support[i] = support_t[0][i][ind[0][i]]
-            rand_shot = topk_support.view(n_way * 16, *(topk_support.size()[2:])) # [n_way * 8, 3,84,84]
-            grid = make_grid(rand_shot, nrow=16)
-            save_image(grid, "memory_images_1500_" + str(self._debug_count)+".png")
+            print(topk_support)
+            # rand_shot = topk_support.view(n_way * 16, *(topk_support.size()[2:])) # [n_way * 8, 3,84,84]
+            # grid = make_grid(rand_shot, nrow=16)
+            # save_image(grid, "memory_images_1500_" + str(self._debug_count)+".png")
             self._debug_count += 1
 
         # mask_thresh = (sim > 0.75).float()

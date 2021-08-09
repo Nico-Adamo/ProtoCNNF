@@ -49,7 +49,8 @@ if __name__ == '__main__':
     with torch.no_grad():
         for i, batch in enumerate(test_loader, 1):
             data, target = [_.cuda() for _ in batch]
-            logits = model(data)
+            support_label = target[:args.shot * args.way]
+            logits = model(data, debug_labels = support_label)
 
             if i == 150:
                 break

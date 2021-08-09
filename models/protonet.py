@@ -30,7 +30,7 @@ class ProtoNet(nn.Module):
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
                     torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + args.query))).long().view(1, args.query, args.way))
 
-    def forward(self, x, memory_bank = False, get_feature = False, epoch = 0):
+    def forward(self, x, memory_bank = False, get_feature = False, epoch = 0, debug_labels = None):
         if get_feature:
             return self.encoder(x)
         else:
@@ -51,13 +51,13 @@ class ProtoNet(nn.Module):
                 support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
                 query = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
 
-                logits = self._forward(support, query, memory_bank = memory_bank, memory_encoded = memory_encoded) # add debug_support = debug_support to visualize memory bank
+                logits = self._forward(support, query, memory_bank = memory_bank, memory_encoded = memory_encoded, debug_support = debug_labels) # add debug_support = debug_support to visualize memory bank
                 cycle_logits.append(logits)
 
             # Update memory bank:
             if self.training:
-                self.memory_bank.add_memory(support.view(-1,640))
-                self.memory_bank._debug_add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
+                self.memory_bank._debug_add_memory(debug_labels)
+                self.memory_bank.add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
 
             return logits
 
