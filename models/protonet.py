@@ -63,8 +63,10 @@ class ProtoNet(nn.Module):
                 cycle_logits.append(logits)
 
             # Update memory bank:
-            cur_memory_bank._debug_add_memory(debug_labels)
             cur_memory_bank.add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
+
+            if debug_labels is not None:
+                cur_memory_bank._debug_add_memory(debug_labels)
 
             return logits
 
