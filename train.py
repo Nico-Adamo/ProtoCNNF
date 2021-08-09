@@ -140,7 +140,7 @@ if __name__ == '__main__':
                 data, target = [_.cuda() for _ in batch]
                 support_label = target[:args.shot * args.way]
 
-                logits = model(data, epoch = epoch, memory_bank = memory_bank, debug_labels = support_label)
+                logits = model(data, memory_bank = memory_bank, debug_labels = support_label)
 
                 loss = F.cross_entropy(logits, label)
 
