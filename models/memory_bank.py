@@ -45,7 +45,7 @@ class MemoryBank(nn.Module):
         memory_t = memory.permute(0,2,1,3)  # [batch_size, n_way, n_shot + n_memory, n_dim]
         support_t = support.permute(0,2,1,3) # [batch_size, n_way, n_shot, n_dim]
         memory_t = F.normalize(memory_t, dim=-1)
-        # support_t = F.normalize(support_t, dim=-1)
+        support_t = F.normalize(support_t, dim=-1)
         # [batch_size, n_way, n_shot, n_dim] x [batch_size, n_way, n_dim, n_shot + n_memory] -> # [batch_size, n_way, n_shot, n_shot + n_memory]
         cos_matrix = torch.matmul(support_t, memory_t.permute(0,1,3,2))
         return cos_matrix.mean(dim=2) # [batch_size, n_way, n_shot + n_memory]
@@ -65,16 +65,16 @@ class MemoryBank(nn.Module):
         shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
         sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_way, n_shot + n_memory]
 
-        mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.2]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
+        mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.5]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
         sim = sim * mask_weight
 
         # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
 
-        topk, ind = torch.topk(sim, self.augment_size, dim=-1) # 8 = num of support examples per class
+        topk, ind = torch.topk(sim, self.augment_size, dim=-1) # [batch_size, n_way, augment_size]
         res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory).cuda())
         sim = res.scatter(2, ind, topk) # Make all weights but top-k 0
 
-        if debug_support is not None and random.randrange(10) == 4:
+        if debug_support is not None:
             memory_support = self._debug_memory.view(batch_size, n_memory, 1).expand(-1, -1, n_way)
             debug_support = debug_support.view(batch_size, n_shot, n_way)
             support_memory_imgs = torch.cat([debug_support, memory_support], dim=1) # [batch_size, n_shot + n_memory, n_way, 3,84,84]
@@ -82,11 +82,18 @@ class MemoryBank(nn.Module):
             topk_support = torch.zeros(n_way, self.augment_size)
             for i in range(n_way):
                 topk_support[i] = support_t[0][i][ind[0][i]]
-            print(topk_support)
+            # print(topk_support)
             # rand_shot = topk_support.view(n_way * 16, *(topk_support.size()[2:])) # [n_way * 8, 3,84,84]
             # grid = make_grid(rand_shot, nrow=16)
             # save_image(grid, "memory_images_1500_" + str(self._debug_count)+".png")
             self._debug_count += 1
+
+        # Make all weights not in the class 0
+        for i in range(n_way):
+            class_num = topk_support[0][i][0]
+            for j in range(self.augment_size):
+                if topk_support[0][i][j] != class_num:
+                    sim[0][i][ind[0][i][j]] = 0
 
         # mask_thresh = (sim > 0.75).float()
         # sim = sim * mask_thresh + 1e-8
