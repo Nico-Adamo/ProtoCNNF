@@ -88,12 +88,12 @@ class MemoryBank(nn.Module):
             # save_image(grid, "memory_images_1500_" + str(self._debug_count)+".png")
             self._debug_count += 1
 
-        # Make all weights not in the class 0
-        for i in range(n_way):
-            class_num = topk_support[i][0]
-            for j in range(self.augment_size):
-                if topk_support[i][j] != class_num:
-                    sim[0][i][ind[0][i][j]] = 0
+            # Make all weights not in the class 0
+            for i in range(n_way):
+                class_num = topk_support[i][0]
+                for j in range(self.augment_size):
+                    if topk_support[i][j] != class_num:
+                        sim[0][i][ind[0][i][j]] = 0
 
         # mask_thresh = (sim > 0.75).float()
         # sim = sim * mask_thresh + 1e-8

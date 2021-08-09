@@ -168,10 +168,10 @@ if __name__ == '__main__':
             va = Averager()
 
             for i, batch in enumerate(val_loader, 1):
-                data, target = [_.cuda() for _ in batch]
+                data, _ = [_.cuda() for _ in batch]
                 support_label = target[:args.shot * args.way]
 
-                logits = model(data, memory_bank = memory_bank, debug_labels = support_label)
+                logits = model(data, memory_bank = memory_bank, validation = True)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -189,10 +189,10 @@ if __name__ == '__main__':
 
                 with torch.no_grad():
                     for i, batch in enumerate(test_loader, 1):
-                        data, target = [_.cuda() for _ in batch]
+                        data, _ = [_.cuda() for _ in batch]
                         support_label = target[:args.shot * args.way]
 
-                        logits = model(data, memory_bank = memory_bank, debug_labels = support_label)
+                        logits = model(data, memory_bank = memory_bank)
                         loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)
