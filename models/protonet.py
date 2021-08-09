@@ -41,7 +41,7 @@ class ProtoNet(nn.Module):
             cycle_logits = []
             memory_bank = True if len(self.memory_bank) > 100 and memory_bank else False
             # encode memory bank
-            memory_encoded = self.encoder(self.memory_bank._debug_memory) if memory_bank else None
+            memory_encoded = self.encoder(self.memory_bank.memory) if memory_bank else None
             for cycle in range(self.args.cycles + 1):
                 instance_embs = cycle_instance_embs[cycle]
 
