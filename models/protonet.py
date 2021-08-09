@@ -23,6 +23,8 @@ class ProtoNet(nn.Module):
             raise ValueError('')
 
         self.memory_bank = MemoryBank(args.memory_size)
+        self.val_memory_bank = MemoryBank(args.memory_size)
+        self.eval_memory_bank = MemoryBank(args.memory_size)
 
 
     def split_instances(self, data):
@@ -30,18 +32,24 @@ class ProtoNet(nn.Module):
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
                     torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + args.query))).long().view(1, args.query, args.way))
 
-    def forward(self, x, memory_bank = False, get_feature = False, epoch = 0, debug_labels = None):
+    def forward(self, x, memory_bank = False, get_feature = False, validation = False, debug_labels = None):
         if get_feature:
             return self.encoder(x)
         else:
+            if self.training:
+                cur_memory_bank = self.memory_bank
+            elif validation:
+                cur_memory_bank = self.val_memory_bank
+            else:
+                cur_memory_bank = self.eval_memory_bank
             # feature extraction
             x = x.squeeze(0)
             cycle_instance_embs = self.encoder(x, inter_cycle=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             cycle_logits = []
-            memory_bank = True if len(self.memory_bank) > 100 and memory_bank else False
+            cur_memory_bank = None if len(cur_memory_bank) > 100 and memory_bank else cur_memory_bank
             # encode memory bank
-            memory_encoded = self.encoder(self.memory_bank.memory) if memory_bank else None
+            memory_encoded = self.encoder(cur_memory_bank.memory) if memory_bank else None
             for cycle in range(self.args.cycles + 1):
                 instance_embs = cycle_instance_embs[cycle]
 
@@ -51,23 +59,22 @@ class ProtoNet(nn.Module):
                 support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
                 query = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
 
-                logits = self._forward(support, query, memory_bank = memory_bank, memory_encoded = memory_encoded, debug_support = debug_labels) # add debug_support = debug_support to visualize memory bank
+                logits = self._forward(support, query, memory_bank = cur_memory_bank, memory_encoded = memory_encoded, debug_support = debug_labels) # add debug_support = debug_support to visualize memory bank
                 cycle_logits.append(logits)
 
             # Update memory bank:
-            if self.training:
-                self.memory_bank._debug_add_memory(debug_labels)
-                self.memory_bank.add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
+            cur_memory_bank._debug_add_memory(debug_labels)
+            cur_memory_bank.add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84))
 
             return logits
 
-    def _forward(self, support, query, memory_bank = False, memory_encoded = None, debug_support = None):
+    def _forward(self, support, query, memory_bank = None, memory_encoded = None, debug_support = None):
         emb_dim = support.size(-1)
         # organize support/query data
 
         batch_size, n_shot, n_way, n_dim = support.shape
-        if memory_bank == True:
-            proto = self.memory_bank.compute_prototypes(support, memory_encoded, debug_support = debug_support)
+        if memory_bank != None:
+            proto = memory_bank.compute_prototypes(support, memory_encoded, debug_support = debug_support)
         else:
             proto = support.mean(dim=1)
 
