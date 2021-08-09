@@ -137,9 +137,9 @@ if __name__ == '__main__':
         ta = Averager()
         with tqdm(train_loader, total=args.episodes_per_epoch) as pbar:
             for i, batch in enumerate(pbar, 1):
-                data, _ = [_.cuda() for _ in batch]
+                data, target = [_.cuda() for _ in batch]
 
-                logits = model(data, epoch = epoch, memory_bank = memory_bank)
+                logits = model(data, epoch = epoch, memory_bank = memory_bank, debug_labels = target)
 
                 loss = F.cross_entropy(logits, label)
 
@@ -167,9 +167,9 @@ if __name__ == '__main__':
             va = Averager()
 
             for i, batch in enumerate(val_loader, 1):
-                data, _ = [_.cuda() for _ in batch]
+                data, target = [_.cuda() for _ in batch]
 
-                logits = model(data, memory_bank = memory_bank)
+                logits = model(data, memory_bank = memory_bank, debug_labels = target)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -187,9 +187,9 @@ if __name__ == '__main__':
 
                 with torch.no_grad():
                     for i, batch in enumerate(test_loader, 1):
-                        data, _ = [_.cuda() for _ in batch]
+                        data, target = [_.cuda() for _ in batch]
 
-                        logits = model(data, memory_bank = memory_bank)
+                        logits = model(data, memory_bank = memory_bank, debug_labels = target)
                         loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)
