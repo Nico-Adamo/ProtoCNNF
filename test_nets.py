@@ -29,7 +29,8 @@ if __name__ == '__main__':
         model = "ResNet12",
         bias_shift = True,
         dataset = "MiniImageNet",
-        memory_bank_size = 1500
+        memory_size = 1500,
+        memory_start = 0
     )
 
     set_gpu("3")
