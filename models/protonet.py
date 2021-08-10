@@ -45,7 +45,7 @@ class ProtoNet(nn.Module):
             x = x.squeeze(0)
             instance_embs = self.encoder(x) # If inter cycle: [cycles + 1, 6 - ind_block, n_batch, n_emb]
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
-            memory_bank = True if self.memory_bank.get_length(mode=memory_mode) > 100 and    else False
+            memory_bank = True if self.memory_bank.get_length(mode=memory_mode) > 100 and memory_bank else False
             # encode memory bank
             memory_encoded = self.encoder(self.memory_bank.get_memory(mode = memory_mode)) if memory_bank else None
 
