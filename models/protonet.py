@@ -23,6 +23,8 @@ class ProtoNet(nn.Module):
             raise ValueError('')
 
         self.memory_bank = MemoryBank(args.memory_size)
+        self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
+        nn.init.xavier_uniform_(self.global_w.weight)
 
     def split_instances(self, data):
         args = self.args
@@ -41,21 +43,19 @@ class ProtoNet(nn.Module):
                 memory_mode = "eval"
             # feature extraction
             x = x.squeeze(0)
-            cycle_instance_embs = self.encoder(x, inter_cycle=True) # [cycles + 1, 6 - ind_block, n_batch, n_emb]
+            instance_embs = self.encoder(x) # If inter cycle: [cycles + 1, 6 - ind_block, n_batch, n_emb]
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             memory_bank = True if self.memory_bank.get_length(mode=memory_mode) > 100 and memory_bank else False
             # encode memory bank
             memory_encoded = self.encoder(self.memory_bank.get_memory(mode = memory_mode)) if memory_bank else None
-            for cycle in range(self.args.cycles + 1):
-                instance_embs = cycle_instance_embs[cycle]
 
-                # split support query set for few-shot data
-                support_idx, query_idx = self.split_instances(x)
-                debug_support = x[support_idx.flatten()].view(1, self.args.shot, self.args.way, 3, 84, 84)
-                support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
-                query = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
+            # split support query set for few-shot data
+            support_idx, query_idx = self.split_instances(x)
+            debug_support = x[support_idx.flatten()].view(1, self.args.shot, self.args.way, 3, 84, 84)
+            support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
+            query = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
 
-                logits = self._forward(support, query, memory_bank = memory_bank, memory_encoded = memory_encoded, debug_support = debug_labels) # add debug_support = debug_support to visualize memory bank
+            logits = self._forward(support, query, memory_bank = memory_bank, memory_encoded = memory_encoded, debug_support = debug_labels) # add debug_support = debug_support to visualize memory bank
 
             # Update memory bank:
             self.memory_bank.add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84), mode = memory_mode)
@@ -63,7 +63,11 @@ class ProtoNet(nn.Module):
             if debug_labels is not None:
                 self.memory_bank.add_memory(debug_labels, mode = "debug")
 
-            return logits
+            if self.training:
+                class_embs = self.global_w(instance_embs)
+                return logits, class_embs
+            else:
+                return logits
 
     def _forward(self, support, query, memory_bank = False, memory_encoded = None, debug_support = None):
         emb_dim = support.size(-1)
