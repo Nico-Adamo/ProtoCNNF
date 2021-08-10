@@ -106,11 +106,11 @@ if __name__ == '__main__':
     if args.multi_gpu:
         model.encoder = nn.DataParallel(model.encoder, dim=0)
 
-    memory_param = [v for k,v in model.named_parameters() if 'memory_bank' in k]
-    non_memory_param = [v for k,v in model.named_parameters() if 'memory_bank' not in k]
+    encoder_param = [v for k,v in model.named_parameters() if 'encoder' in k]
+    non_encoder_param = [v for k,v in model.named_parameters() if 'encoder' not in k]
 
     optimizer = torch.optim.SGD(
-          [{'params': non_memory_param}, {'params': memory_param, 'lr': args.lr * 10}],
+          [{'params': encoder_param}, {'params': non_encoder_param, 'lr': args.lr * 10}],
           args.lr,
           momentum=0.9,
           nesterov=True,
@@ -144,11 +144,10 @@ if __name__ == '__main__':
         with tqdm(train_loader, total=args.episodes_per_epoch) as pbar:
             for i, batch in enumerate(pbar, 1):
                 data, target = [_.cuda() for _ in batch]
-                support_label = target[:args.shot * args.way]
 
-                logits = model(data, memory_bank = memory_bank, debug_labels = support_label)
+                logits, labels = model(data, memory_bank = memory_bank, debug_labels = support_label)
 
-                loss = F.cross_entropy(logits, label)
+                loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
