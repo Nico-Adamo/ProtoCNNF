@@ -11,7 +11,7 @@ class MemoryBank(nn.Module):
         super().__init__()
         self.size = size
 
-        self.modes = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda(), "debug": torch.tensor([]).cuda()}
+        self.memory = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda(), "debug": torch.tensor([]).cuda()}
 
         self.augment_size = 16 # "Make everything n-shot"
         # Possible self.bias to add to cosine matrix?
@@ -46,22 +46,22 @@ class MemoryBank(nn.Module):
         return out
 
     def add_memory(self, data, mode = "train"):
-        memory = self.modes[mode]
+        memory = self.memory[mode]
         # Add memory to the end of the memory bank
         # data: [batch_size, emb_size]
         if memory.size(0) < self.size:
-            memory.copy_(torch.cat((memory, data)))
+            self.memory[mode] = torch.cat((memory, data))
         else:
-            memory.copy_((memory[data.shape[0]:], data))
+            self.memory[mode] = torch.cat((memory[data.shape[0]:], data))
 
     def get_memory(self, mode = "train"):
-        return self.modes[mode]
+        return self.memory[mode]
 
     def reset(self, mode = "train"):
-        self.modes[mode] = torch.tensor([])
+        self.memory[mode] = torch.tensor([])
 
     def get_length(self, mode = "train"):
-        return self.modes[mode].size(0)
+        return self.memory[mode].size(0)
 
     def get_similarity_scores(self, support, memory):
         """
