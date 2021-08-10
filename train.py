@@ -96,9 +96,12 @@ if __name__ == '__main__':
 
     if args.restore_from != "":
         print("Restoring from {}".format(args.restore_from))
+        model_dict = model.state_dict()
+
         checkpoint = torch.load(args.restore_from)
         checkpoint = {k: v for k, v in checkpoint.items() if k in model.state_dict()}
-        model.load_state_dict(checkpoint)
+        model_dict.update(checkpoint)
+        model.load_state_dict(model_dict)
 
     if args.multi_gpu:
         model.encoder = nn.DataParallel(model.encoder, dim=0)
