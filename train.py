@@ -106,8 +106,9 @@ if __name__ == '__main__':
     if args.multi_gpu:
         model.encoder = nn.DataParallel(model.encoder, dim=0)
 
+    memory_param = [v for k,v in model.named_parameters() if 'memory_bank' in k]
     optimizer = torch.optim.SGD(
-          model.parameters(),
+          [{'params': model.parameters()}, {'params': memory_param, 'lr': args.lr * 10}],
           args.lr,
           momentum=0.9,
           nesterov=True,

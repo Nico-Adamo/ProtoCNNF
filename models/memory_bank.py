@@ -10,7 +10,13 @@ class MemoryBank(nn.Module):
     def __init__(self, size):
         super().__init__()
         self.size = size
+
         self.memory = torch.tensor([]).cuda()
+        self.val_memory = torch.tensor([]).cuda()
+        self.eval_memory = torch.tensor([]).cuda()
+
+        self.modes = {"train": self.memory, "val": self.val_memory, "eval": self.eval_memory, "debug": self._debug_memory}
+
         self.augment_size = 16 # "Make everything n-shot"
         # Possible self.bias to add to cosine matrix?
 
@@ -44,22 +50,23 @@ class MemoryBank(nn.Module):
         out = torch.exp(self.alpha) * out + torch.exp(self.beta)
         return out
 
-    def add_memory(self, data):
+    def add_memory(self, data, mode = "train"):
+        memory = self.modes[mode]
         # Add memory to the end of the memory bank
         # data: [batch_size, emb_size]
-        if self.memory.size(0) < self.size:
-            self.memory = torch.cat((self.memory, data))
+        if memory.size(0) < self.size:
+            memory = torch.cat((memory, data))
         else:
-            self.memory = torch.cat((self.memory[data.shape[0]:], data))
+            memory = torch.cat((memory[data.shape[0]:], data))
 
-    def get_memory(self):
-        return self.memory
+    def get_memory(self, mode = "train"):
+        return self.modes[mode]
 
-    def reset(self):
-        self.memory = torch.tensor([])
+    def reset(self, mode = "train"):
+        self.modes[mode] = torch.tensor([])
 
-    def __len__(self):
-        return self.memory.size(0)
+    def __len__(self, mode = "train"):
+        return self.modes[mode].size(0)
 
     def get_similarity_scores(self, support, memory):
         """
@@ -85,7 +92,6 @@ class MemoryBank(nn.Module):
            return: [batch_size, n_way, n_dim]
         """
         memory = memory_encoded
-
 
         n_memory, _ = memory.shape
         batch_size, n_shot, n_way, n_dim = support.shape
@@ -138,9 +144,3 @@ class MemoryBank(nn.Module):
         proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
 
         return proto
-
-    def _debug_add_memory(self, data):
-        if self._debug_memory.size(0) < self.size:
-            self._debug_memory = torch.cat((self._debug_memory, data))
-        else:
-            self._debug_memory = torch.cat((self._debug_memory[data.shape[0]:], data))
