@@ -14,13 +14,13 @@ class MemoryBank(nn.Module):
         self.memory = torch.tensor([]).cuda()
         self.val_memory = torch.tensor([]).cuda()
         self.eval_memory = torch.tensor([]).cuda()
+        self._debug_memory = torch.tensor([]).cuda()
 
         self.modes = {"train": self.memory, "val": self.val_memory, "eval": self.eval_memory, "debug": self._debug_memory}
 
         self.augment_size = 16 # "Make everything n-shot"
         # Possible self.bias to add to cosine matrix?
 
-        self._debug_memory = torch.tensor([]).cuda()
         self._debug_count = 0
 
         self.layer1_rn = nn.Sequential(
