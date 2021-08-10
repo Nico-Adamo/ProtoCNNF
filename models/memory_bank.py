@@ -69,6 +69,7 @@ class MemoryBank(nn.Module):
         # sim = sim * mask_weight
 
         # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
+        sim = F.softmax(sim, dim=-1)
 
         topk, ind = torch.topk(sim, self.augment_size, dim=-1) # [batch_size, n_way, augment_size]
         res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory).cuda())
@@ -99,8 +100,6 @@ class MemoryBank(nn.Module):
         # sim = sim * mask_thresh + 1e-8
         # mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.01]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
         # sim = sim * mask_weight
-
-        sim = F.softmax(sim, dim=-1)
 
         sim = sim.permute(0,2,1).unsqueeze(-1) # [batch_size, n_shot + n_memory, n_way, 1]
         proto = (sim * shot_memory).sum(dim=1) # [batch_size, n_way, n_dim]
