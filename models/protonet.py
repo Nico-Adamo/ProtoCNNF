@@ -58,10 +58,10 @@ class ProtoNet(nn.Module):
                 logits = self._forward(support, query, memory_bank = memory_bank, memory_encoded = memory_encoded, debug_support = debug_labels) # add debug_support = debug_support to visualize memory bank
 
             # Update memory bank:
-            cur_memory_bank.add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84), mode = memory_mode)
+            self.memory_bank.add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84), mode = memory_mode)
 
             if debug_labels is not None:
-                cur_memory_bank.add_memory(debug_labels, mode = "debug")
+                self.memory_bank.add_memory(debug_labels, mode = "debug")
 
             return logits
 
