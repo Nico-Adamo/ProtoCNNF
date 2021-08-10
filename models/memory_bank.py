@@ -95,11 +95,11 @@ class MemoryBank(nn.Module):
         sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_way, n_shot + n_memory]
 
         # Per-instance temperature
-        # memory_weights = self.instance_scale(memory)
-        # support_weights = self.instance_scale(support.view(batch_size * n_shot * n_way, n_dim)).view(batch_size, n_shot, n_way)
-        # memory_weights_x = memory_weights.view(batch_size, n_memory, 1).expand(-1, -1, n_way) # [batch_size, n_shot + n_memory, n_way]
-        # shot_memory_weights = torch.cat([support_weights, memory_weights_x], dim=1).permute(0,2,1) # [batch_size, n_way, n_shot + n_memory]
-        # sim = sim / shot_memory_weights
+        memory_weights = self.instance_scale(memory)
+        support_weights = self.instance_scale(support.view(batch_size * n_shot * n_way, n_dim)).view(batch_size, n_shot, n_way)
+        memory_weights_x = memory_weights.view(batch_size, n_memory, 1).expand(-1, -1, n_way) # [batch_size, n_shot + n_memory, n_way]
+        shot_memory_weights = torch.cat([support_weights, memory_weights_x], dim=1).permute(0,2,1) # [batch_size, n_way, n_shot + n_memory]
+        sim = sim / shot_memory_weights
 
         # mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.5]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
         # sim = sim * mask_weight

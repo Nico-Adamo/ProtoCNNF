@@ -23,8 +23,8 @@ class ProtoNet(nn.Module):
             raise ValueError('')
 
         self.memory_bank = MemoryBank(args.memory_size)
-        self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
-        nn.init.xavier_uniform_(self.global_w.weight)
+        #self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
+        #nn.init.xavier_uniform_(self.global_w.weight)
 
     def split_instances(self, data):
         args = self.args
@@ -64,8 +64,8 @@ class ProtoNet(nn.Module):
                 self.memory_bank.add_memory(debug_labels, mode = "debug")
 
             if self.training:
-                class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
-                return logits, class_embs
+                #class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
+                return logits#, class_embs
             else:
                 return logits
 

@@ -145,9 +145,9 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, target = [_.cuda() for _ in batch]
 
-                logits, labels = model(data, memory_bank = memory_bank)
-
-                loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
+                logits#, labels = model(data, memory_bank = memory_bank)
+                loss = F.cross_entropy(logits, label)
+                # loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
