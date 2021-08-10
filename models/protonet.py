@@ -64,8 +64,8 @@ class ProtoNet(nn.Module):
                 self.memory_bank.add_memory(debug_labels, mode = "debug")
 
             if self.training:
-                class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
-                return logits, class_embs
+                #class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
+                return logits#, class_embs
             else:
                 return logits
 
