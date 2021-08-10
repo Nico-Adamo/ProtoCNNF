@@ -18,7 +18,7 @@ class MemoryBank(nn.Module):
         self._debug_count = 0
 
         self.layer1_rn = nn.Sequential(
-                nn.UpsamplingNearest2d(scale_factor=2),
+                nn.UpsamplingNearest2d(scale_factor=4),
                 nn.Conv2d(640,320,kernel_size=3,padding=0),
                 nn.BatchNorm2d(320, momentum=1, affine=True),
                 nn.ReLU(),
