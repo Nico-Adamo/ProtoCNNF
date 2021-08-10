@@ -47,8 +47,8 @@ class ProtoNet(nn.Module):
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             memory_bank = True if self.memory_bank.get_length(mode=memory_mode) > 100 and memory_bank else False
             # encode memory bank
-            memory_encoded = self.encoder(self.memory_bank.get_memory(mode = memory_mode)) if memory_bank else None
-
+            # memory_encoded = self.encoder(self.memory_bank.get_memory(mode = memory_mode)) if memory_bank else None
+            memory_encoded = self.memory_bank.get_memory(mode = memory_mode)
             # split support query set for few-shot data
             support_idx, query_idx = self.split_instances(x)
             debug_support = x[support_idx.flatten()].view(1, self.args.shot, self.args.way, 3, 84, 84)
@@ -58,7 +58,7 @@ class ProtoNet(nn.Module):
             logits = self._forward(support, query, memory_bank = memory_bank, memory_encoded = memory_encoded, debug_support = debug_labels) # add debug_support = debug_support to visualize memory bank
 
             # Update memory bank:
-            self.memory_bank.add_memory(debug_support.view(self.args.shot*self.args.way,3,84,84), mode = memory_mode)
+            self.memory_bank.add_memory(support.view(self.args.shot*self.args.way,640), mode = memory_mode)
 
             if debug_labels is not None:
                 self.memory_bank.add_memory(debug_labels, mode = "debug")
