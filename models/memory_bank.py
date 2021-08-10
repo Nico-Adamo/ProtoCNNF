@@ -37,6 +37,7 @@ class MemoryBank(nn.Module):
     def instance_scale(self, x):
         out = x.view(x.size(0), 640, 1, 1)
         out = self.layer1_rn(out)
+        out = out.view(out.size(0), -1)
         out = self.fc1_rn(out)
         out = self.fc2_rn(out)
         out = torch.sigmoid(out)
