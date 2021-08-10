@@ -65,7 +65,7 @@ class MemoryBank(nn.Module):
     def reset(self, mode = "train"):
         self.modes[mode] = torch.tensor([])
 
-    def __len__(self, mode = "train"):
+    def get_length(self, mode = "train"):
         return self.modes[mode].size(0)
 
     def get_similarity_scores(self, support, memory):
