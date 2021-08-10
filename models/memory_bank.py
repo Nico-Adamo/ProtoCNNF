@@ -11,12 +11,7 @@ class MemoryBank(nn.Module):
         super().__init__()
         self.size = size
 
-        self.memory = torch.tensor([]).cuda()
-        self.val_memory = torch.tensor([]).cuda()
-        self.eval_memory = torch.tensor([]).cuda()
-        self._debug_memory = torch.tensor([]).cuda()
-
-        self.modes = {"train": self.memory, "val": self.val_memory, "eval": self.eval_memory, "debug": self._debug_memory}
+        self.modes = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda(), "debug": torch.tensor([]).cuda()}
 
         self.augment_size = 16 # "Make everything n-shot"
         # Possible self.bias to add to cosine matrix?
@@ -55,9 +50,9 @@ class MemoryBank(nn.Module):
         # Add memory to the end of the memory bank
         # data: [batch_size, emb_size]
         if memory.size(0) < self.size:
-            memory = torch.cat((memory, data))
+            memory.copy_(torch.cat((memory, data)))
         else:
-            memory = torch.cat((memory[data.shape[0]:], data))
+            memory.copy_((memory[data.shape[0]:], data))
 
     def get_memory(self, mode = "train"):
         return self.modes[mode]
