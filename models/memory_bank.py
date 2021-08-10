@@ -17,6 +17,32 @@ class MemoryBank(nn.Module):
         self._debug_memory = torch.tensor([]).cuda()
         self._debug_count = 0
 
+        self.layer1_rn = nn.Sequential(
+                nn.UpsamplingNearest2d(scale_factor=5),
+                nn.Conv2d(640,320,kernel_size=3,padding=0),
+                nn.BatchNorm2d(320, momentum=1, affine=True),
+                nn.ReLU(),
+                nn.MaxPool2d(2))
+        self.fc1_rn = nn.Sequential(
+                nn.Linear(320 * 2 * 2, 160),
+                nn.BatchNorm1d(160, momentum=1, affine=True),
+                nn.ReLU())
+        self.fc2_rn = nn.Linear(160, 1)
+        nn.init.xavier_uniform_(self.fc2_rn.weight)
+        self.alpha = nn.Parameter(torch.Tensor(1))
+        nn.init.constant_(self.alpha, 0)
+        self.beta = nn.Parameter(torch.Tensor(1))
+        nn.init.constant_(self.beta, 0)
+
+    def instance_scale(self, x):
+        out = x.view(x.size(0), 640, 1, 1)
+        out = self.layer1_rn(out)
+        out = self.fc1_rn(out)
+        out = self.fc2_rn(out)
+        out = torch.sigmoid(out)
+        out = torch.exp(self.alpha) * out + torch.exp(self.beta)
+        return out
+
     def add_memory(self, data):
         # Add memory to the end of the memory bank
         # data: [batch_size, emb_size]
@@ -59,18 +85,24 @@ class MemoryBank(nn.Module):
         """
         memory = memory_encoded
 
+
         n_memory, _ = memory.shape
         batch_size, n_shot, n_way, n_dim = support.shape
         memory_x = memory.view(batch_size, n_memory, 1, n_dim).expand(-1, -1, n_way, -1)
         shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
         sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_way, n_shot + n_memory]
 
+        # Per-instance temperature
+        memory_weights = self.instance_scale(memory)
+        support_weights = self.instance_scale(support.view(batch_size * n_shot * n_way, n_dim)).view(batch_size, n_shot, n_way, 1)
+        memory_weights_x = memory.view(batch_size, n_memory, 1, 1).expand(-1, -1, n_way, -1)
+        shot_memory_weights = torch.cat([support, memory_weights_x], dim=1)
+        sim = sim / shot_memory_weights
+
         # mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.5]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
         # sim = sim * mask_weight
 
         # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
-        sim = F.softmax(sim, dim=-1)
-
         topk, ind = torch.topk(sim, self.augment_size, dim=-1) # [batch_size, n_way, augment_size]
         res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory).cuda())
         sim = res.scatter(2, ind, topk) # Make all weights but top-k 0
@@ -102,7 +134,7 @@ class MemoryBank(nn.Module):
         # sim = sim * mask_weight
 
         sim = sim.permute(0,2,1).unsqueeze(-1) # [batch_size, n_shot + n_memory, n_way, 1]
-        proto = (sim * shot_memory).sum(dim=1) # [batch_size, n_way, n_dim]
+        proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
 
         return proto
 
