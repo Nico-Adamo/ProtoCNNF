@@ -73,6 +73,8 @@ class MemoryBank(nn.Module):
         topk, ind = torch.topk(sim, self.augment_size, dim=-1) # [batch_size, n_way, augment_size]
         res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory).cuda())
         sim = res.scatter(2, ind, topk) # Make all weights but top-k 0
+        if not self.training:
+            print(sim)
 
         if debug_support is not None:
             memory_support = self._debug_memory.view(batch_size, n_memory, 1).expand(-1, -1, n_way)
