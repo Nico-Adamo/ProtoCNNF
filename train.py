@@ -145,7 +145,7 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, target = [_.cuda() for _ in batch]
 
-                logits, labels = model(data, memory_bank = memory_bank, debug_labels = support_label)
+                logits, labels = model(data, memory_bank = memory_bank)
 
                 loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 
