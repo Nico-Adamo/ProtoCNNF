@@ -96,7 +96,7 @@ class MemoryBank(nn.Module):
         # Per-instance temperature
         memory_weights = self.instance_scale(memory)
         support_weights = self.instance_scale(support.view(batch_size * n_shot * n_way, n_dim)).view(batch_size, n_shot, n_way, 1)
-        memory_weights_x = memory.view(batch_size, n_memory, 1, 1).expand(-1, -1, n_way, -1)
+        memory_weights_x = memory_weights.view(batch_size, n_memory, 1, 1).expand(-1, -1, n_way, -1)
         shot_memory_weights = torch.cat([support, memory_weights_x], dim=1)
         sim = sim / shot_memory_weights
 
