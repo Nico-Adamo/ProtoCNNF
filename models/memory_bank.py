@@ -103,7 +103,7 @@ class MemoryBank(nn.Module):
         sim = F.softmax(sim, dim=-1)
 
         sim = sim.permute(0,2,1).unsqueeze(-1) # [batch_size, n_shot + n_memory, n_way, 1]
-        proto = (sim * shot_memory).mean(dim=1) # [batch_size, n_way, n_dim]
+        proto = (sim * shot_memory).sum(dim=1) # [batch_size, n_way, n_dim]
 
         return proto
 
