@@ -65,16 +65,14 @@ class MemoryBank(nn.Module):
         shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
         sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_way, n_shot + n_memory]
 
-        mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.5]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
-        sim = sim * mask_weight
+        # mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.5]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
+        # sim = sim * mask_weight
 
         # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
 
         topk, ind = torch.topk(sim, self.augment_size, dim=-1) # [batch_size, n_way, augment_size]
         res = Variable(torch.zeros(batch_size, n_way, n_shot + n_memory).cuda())
         sim = res.scatter(2, ind, topk) # Make all weights but top-k 0
-        if not self.training:
-            print(sim)
 
         if debug_support is not None:
             memory_support = self._debug_memory.view(batch_size, n_memory, 1).expand(-1, -1, n_way)
@@ -102,8 +100,10 @@ class MemoryBank(nn.Module):
         # mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.01]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
         # sim = sim * mask_weight
 
+        sim = F.softmax(sim, dim=-1)
+
         sim = sim.permute(0,2,1).unsqueeze(-1) # [batch_size, n_shot + n_memory, n_way, 1]
-        proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
+        proto = (sim * shot_memory).mean(dim=1) # [batch_size, n_way, n_dim]
 
         return proto
 
