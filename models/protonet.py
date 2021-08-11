@@ -52,7 +52,8 @@ class ProtoNet(nn.Module):
 
             # Update memory bank:
             self.memory_bank.add_embedding_memory(support.view(self.args.way * self.args.shot, 640), mode = mode)
-            self.memory_bank.add_image_memory(debug_support.view(self.args.way * self.args.shot,3,84,84), mode = mode)
+            if mode == "train":
+                self.memory_bank.add_image_memory(debug_support.view(self.args.way * self.args.shot,3,84,84), mode = mode)
 
             if self.training:
                 #class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
