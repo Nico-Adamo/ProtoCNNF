@@ -116,7 +116,8 @@ class ProtoNet(nn.Module):
     def compute_prototypes(self, support, memory_bank = False, mode="train"):
         if memory_bank:
             memory = self.memory_bank.get_embedding_memory(mode=mode)
-            image_memory = self.memory_bank.get_image_memory(mode=mode)
+            if mode == "train":
+                image_memory = self.memory_bank.get_image_memory(mode="train")
 
             n_memory, _ = memory.shape
             batch_size, n_shot, n_way, n_dim = support.shape

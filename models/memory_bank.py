@@ -68,5 +68,5 @@ class MemoryBank(nn.Module):
         return self.image_memory[mode]
 
     def get_length(self, mode = "train"):
-        return self.memory[mode].size(0)
+        return self.embedding_memory[mode].size(0)
 
