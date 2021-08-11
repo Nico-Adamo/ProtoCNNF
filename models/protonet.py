@@ -51,7 +51,7 @@ class ProtoNet(nn.Module):
             logits = self._forward(support, query, memory_bank = memory_bank, mode = mode)
 
             # Update memory bank:
-            self.memory_bank.add_embedding_memory(support.view(self.args.way * self.args.shot, 640), mode = mode)
+            self.memory_bank.add_embedding_memory(support.view(self.args.way * self.args.shot, 640).detach(), mode = mode)
             if mode == "train":
                 self.memory_bank.add_image_memory(debug_support.view(self.args.way * self.args.shot,3,84,84), mode = mode)
 
@@ -117,10 +117,8 @@ class ProtoNet(nn.Module):
     def compute_prototypes(self, support, memory_bank = False, mode="train"):
         if memory_bank:
             memory = self.memory_bank.get_embedding_memory(mode=mode)
-            print(memory.shape)
             if mode == "train":
                 image_memory = self.memory_bank.get_image_memory(mode="train")
-                print(image_memory.shape)
 
             n_memory, _ = memory.shape
             batch_size, n_shot, n_way, n_dim = support.shape
