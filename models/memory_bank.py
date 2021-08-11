@@ -12,7 +12,7 @@ class MemoryBank(nn.Module):
         self.size = size
         # Possible self.bias to add to cosine matrix?
         self.embedding_memory = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda(), "debug": torch.tensor([]).cuda()}
-        self.image_memory = {"train": torch.tensor([]).cuda()}
+        self.image_memory = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda(), "debug": torch.tensor([]).cuda()}
 
         self._debug_count = 0
 
@@ -69,4 +69,8 @@ class MemoryBank(nn.Module):
 
     def get_length(self, mode = "train"):
         return self.embedding_memory[mode].size(0)
+
+    def reset(self, mode = "train"):
+        self.embedding_memory[mode] = torch.tensor([]).cuda()
+        self.image_memory[mode] = torch.tensor([]).cuda()
 

@@ -174,6 +174,7 @@ if __name__ == '__main__':
             vl = Averager()
             va = Averager()
 
+            model.memory_bank.reset(mode = "val")
             for i, batch in enumerate(val_loader, 1):
                 data, _ = [_.cuda() for _ in batch]
                 support_label = target[:args.shot * args.way]
@@ -193,6 +194,7 @@ if __name__ == '__main__':
 
             if (epoch - 1) % 20 == 0:
                 ave_acc = Averager()
+                model.memory_bank.reset(mode = "eval")
 
                 with torch.no_grad():
                     for i, batch in enumerate(test_loader, 1):
