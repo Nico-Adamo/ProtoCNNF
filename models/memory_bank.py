@@ -101,8 +101,8 @@ class MemoryBank(nn.Module):
         # shot_memory_weights = torch.cat([support_weights, memory_weights_x], dim=1).permute(0,2,1) # [batch_size, n_way, n_shot + n_memory]
         # sim = sim / shot_memory_weights
 
-        # mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.5]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
-        # sim = sim * mask_weight
+        mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.5]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
+        sim = sim * mask_weight
 
         # Take average along support examples, i.e. compute similarity between each memory/support example and each support example
         topk, ind = torch.topk(sim, self.augment_size, dim=-1) # [batch_size, n_way, augment_size]
