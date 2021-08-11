@@ -23,7 +23,7 @@ class ProtoNet(nn.Module):
             raise ValueError('')
 
         self.memory_bank = MemoryBank(args.memory_size)
-        self.augment_size = 16 # "Make everything n-shot"
+        self.augment_size = 8 # "Make everything n-shot"
 
         # self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
         # nn.init.xavier_uniform_(self.global_w.weight)
@@ -126,7 +126,7 @@ class ProtoNet(nn.Module):
             shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
             sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_way, n_shot + n_memory]
 
-            mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.2]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
+            mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_way, n_shot), torch.tensor([0.5]).expand(batch_size, n_way, n_memory)], dim=-1).cuda()
             sim = sim * mask_weight
 
             topk, ind = torch.topk(sim, self.augment_size, dim=-1) # [batch_size, n_way, augment_size]
