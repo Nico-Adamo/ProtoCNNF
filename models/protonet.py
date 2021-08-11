@@ -23,8 +23,8 @@ class ProtoNet(nn.Module):
             raise ValueError('')
 
         self.memory_bank = MemoryBank(args.memory_size)
-        self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
-        nn.init.xavier_uniform_(self.global_w.weight)
+        # self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
+        # nn.init.xavier_uniform_(self.global_w.weight)
 
     def split_instances(self, data):
         args = self.args
