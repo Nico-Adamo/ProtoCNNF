@@ -144,7 +144,7 @@ class ProtoNet(nn.Module):
                     sim_topk[0][way][shot] = sim[0][way][ind[0][way][shot]]
 
             sim = sim.permute(0,2,1).unsqueeze(-1) # [batch_size, augment_size, n_way, 1]
-            shot_memory = shot_memory_topk.permute(0,2,1)  # [batch_size, augment_size, n_way]
+            shot_memory = shot_memory_topk.permute(0,2,1,3)  # [batch_size, augment_size, n_way, n_dim]
             proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
             return proto
         else:
