@@ -5,7 +5,6 @@ import numpy as np
 from argparse import Namespace
 from torch.autograd import Variable
 from models.memory_bank import MemoryBank
-from utils import gather
 
 class ProtoNet(nn.Module):
     def __init__(self, args):
