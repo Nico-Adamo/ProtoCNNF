@@ -44,19 +44,16 @@ class ProtoNet(nn.Module):
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             memory_bank = True if self.memory_bank.get_length(mode=mode) > 100 and memory_bank else False
 
-            support_idx, query_idx = self.s     plit_instances(x)
+            support_idx, query_idx = self.split_instances(x)
             debug_support = x[support_idx.flatten()].view(1, self.args.shot, self.args.way, 3, 84, 84)
             support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
-            query = instance_embs[query_idx.flatten()].view(  *(query_idx.shape   + (-1,)))
+            query = instance_embs[query_idx.flatten()].view(*(query_idx.shape   + (-1,)))
 
             logits = self._forward(support, query, memory_bank = memory_bank, mode = mode)
 
             # Update memory bank:
             self.memory_bank.add_embedding_memory(logits.view(self.args.way * self.args.shot, 640), mode = mode)
             self.memory_bank.add_image_memory(debug_support.view(self.args.way * self.args.shot,3,84,84), mode = mode)
-
-            if debug_labels is not None:
-                self.memory_bank.add_memory(debug_labels, mode = "debug")
 
             if self.training:
                 #class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
