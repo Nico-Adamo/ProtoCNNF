@@ -66,7 +66,7 @@ class ProtoNet(nn.Module):
         # organize support/query data
 
         batch_size, n_shot, n_way, n_dim = support.shape
-        proto = self.compute_prototypes(support, memory_bank = False, mode = mode)
+        proto = self.compute_prototypes(support, memory_bank = memory_bank, mode = mode)
 
         num_batch = proto.shape[0]
         num_proto = proto.shape[1]
@@ -138,7 +138,6 @@ class ProtoNet(nn.Module):
                     if ind[0][way][shot] < 5 or mode == "eval" or mode == "val": # Support embedding, no need to update
                         shot_memory_topk[0][way][shot] = shot_memory_p[0][way][ind[0][way][shot]]
                     else: # Updated embedding
-                        print("Updating embedding")
                         memory_ind = ind[0][way][shot-5]
                         shot_memory_topk[0][way][shot] = self.encoder(image_memory[memory_ind].unsqueeze(0)).squeeze()
 
