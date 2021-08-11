@@ -135,10 +135,10 @@ class ProtoNet(nn.Module):
             sim_topk = Variable(torch.zeros(batch_size, n_way, self.augment_size).cuda())
             for way in range(n_way):
                 for shot in range(self.augment_size):
-                    if ind[0][way][shot] < 5 or mode == "eval" or mode == "val": # Support embedding, no need to update
+                    if ind[0][way][shot] < self.args.shot or mode == "eval" or mode == "val": # Support embedding, no need to update
                         shot_memory_topk[0][way][shot] = shot_memory_p[0][way][ind[0][way][shot]]
                     else: # Updated embedding
-                        memory_ind = ind[0][way][shot-5]
+                        memory_ind = ind[0][way][shot] - self.args.shot
                         shot_memory_topk[0][way][shot] = self.encoder(image_memory[memory_ind].unsqueeze(0)).squeeze()
 
                     sim_topk[0][way][shot] = sim[0][way][ind[0][way][shot]]
