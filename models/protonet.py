@@ -151,9 +151,9 @@ class ProtoNet(nn.Module):
                             sim_topk[0][shot][way] = 0
                         labels_topk[0][shot][way] = label_memory[memory_ind]
                         shot_memory_topk[0][shot][way] = self.encoder(image_memory[memory_ind].unsqueeze(0)).squeeze()
-            # print(labels_topk)
-            # print(sim_topk)
-            # print("")
+            print(labels_topk)
+            print(sim_topk)
+            print("")
 
             sim_topk = sim_topk.unsqueeze(-1)
             proto = (sim_topk * shot_memory_topk).sum(dim=1) / sim_topk.sum(dim=1) # [batch_size, n_way, n_dim]
