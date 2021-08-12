@@ -145,8 +145,7 @@ class ProtoNet(nn.Module):
 
             sim = sim * mask_class
 
-            sim_topk, ind = torch.topk(sim, self.augment_size, dim=1) # [batch_size, augment_size, n_way]
-            print(sim_topk)
+            # sim_topk, ind = torch.topk(sim, self.augment_size, dim=1) # [batch_size, augment_size, n_way]
             # shot_memory_topk = Variable(torch.zeros(batch_size, self.augment_size, n_way, n_dim).cuda())
             # labels_topk = Variable(torch.zeros(batch_size, self.augment_size, n_way).cuda())
             # for way in range(n_way):
@@ -161,6 +160,7 @@ class ProtoNet(nn.Module):
             #             shot_memory_topk[0][shot][way] = self.encoder(image_memory[memory_ind].unsqueeze(0)).squeeze()
 
             # sim_topk = sim_topk.unsqueeze(-1)
+            sim = sim.unsqueeze(-1)
             proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
             return proto
         else:
