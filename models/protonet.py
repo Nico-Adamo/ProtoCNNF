@@ -58,7 +58,7 @@ class ProtoNet(nn.Module):
         query = self.args.query if mode == "train" else self.args.test_query
         args = self.args
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
-                    torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + args.query))).long().view(1, args.query, args.way))
+                    torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + query))).long().view(1, query, args.way))
 
     def forward(self, x, memory_bank = False, get_feature = False, mode = "train", debug_labels = None):
         if get_feature:
