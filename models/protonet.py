@@ -47,9 +47,9 @@ class ProtoNet(nn.Module):
             support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
             query = instance_embs[query_idx.flatten()].view(*(query_idx.shape   + (-1,)))
 
-            self.memory_bank.add_embedding_memory(query.view(self.args.way * self.args.query, 640).detach(), mode = mode)
-            if mode == "train":
-                self.memory_bank.add_image_memory(x[query_idx.flatten()].view(self.args.way * self.args.query, 3,84,84), mode = mode)
+            # self.memory_bank.add_embedding_memory(query.view(self.args.way * self.args.query, 640).detach(), mode = mode)
+            # if mode == "train":
+            #     self.memory_bank.add_image_memory(x[query_idx.flatten()].view(self.args.way * self.args.query, 3,84,84), mode = mode)
 
             logits = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
 
