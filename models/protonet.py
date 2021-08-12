@@ -23,7 +23,6 @@ class ProtoNet(nn.Module):
             raise ValueError('')
 
         self.memory_bank = MemoryBank(args.memory_size)
-        self.augment_size = 16 # "Make everything n-shot"
 
         # self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
         # nn.init.xavier_uniform_(self.global_w.weight)
@@ -127,26 +126,27 @@ class ProtoNet(nn.Module):
             shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
             sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_shot + n_memory, n_way]
 
-            mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([0.2]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
+            mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([self.args.memory_weight]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
             sim = sim * mask_weight
 
-            topk, ind = torch.topk(sim, self.augment_size, dim=1)
+            if self.training and self.args.use_training_labels:
+                mask_class = torch.ones_like(sim).cuda()
+                for way in range(n_way):
+                    for shot in range(sim.size(1)):
+                        memory_ind = shot - self.args.shot
+                        if label_memory[memory_ind] != debug_labels[way]:
+                            mask_class[0][shot][way] = 0
+
+                sim = sim * mask_class
+
+            topk, ind = torch.topk(sim, self.args.augment_size, dim=1)
             topk_mask = torch.zeros_like(sim)
             for way in range(n_way):
-                for shot in range(self.augment_size):
+                for shot in range(self.args.augment_size):
                     topk_mask[0][ind[0][shot][way]][way] = sim[0][ind[0][shot][way]][way]
 
             sim = sim * topk_mask
 
-            # if self.training:
-            #     mask_class = torch.ones_like(sim).cuda()
-            #     for way in range(n_way):
-            #         for shot in range(sim.size(1)):
-            #             memory_ind = shot - self.args.shot
-            #             if label_memory[memory_ind] != debug_labels[way]:
-            #                 mask_class[0][shot][way] = 0
-
-            #     sim = sim * mask_class
             sim = sim.unsqueeze(-1)
             proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
             return proto
