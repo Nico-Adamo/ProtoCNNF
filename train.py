@@ -77,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('--memory-weight', type=float, default = 0.2)
     parser.add_argument('--use-training-labels', action='store_true', default=False)
     parser.add_argument('--no-save', action='store_true', default=False)
-    parser.add_argument('--transductive-testing-steps', type=int, default = 10)
+    parser.add_argument('--test-transduction-steps', type=int, default = 10)
     parser.add_argument('--query-augment', action='store_true', default=False)
 
     parser.add_argument('--cycles', type=int, default = 0)
