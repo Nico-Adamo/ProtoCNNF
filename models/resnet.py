@@ -46,7 +46,7 @@ class BasicBlock(nn.Module):
         self.ln3 = layers.BatchNorm(planes, cycles)
         self.ln4 = layers.BatchNorm(planes, cycles)
         # self.ln3 = nn.BatchNorm2d(planes)
-        self.relu3 = layers.ReLU(0.1)
+        self.relu3 = layers.leakyReLU(0.1)
 
         self.maxpool = layers.MaxPool2d(stride)
         self.is_in_equal_out = (inplanes == planes)
