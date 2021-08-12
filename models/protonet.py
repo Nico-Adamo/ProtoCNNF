@@ -137,6 +137,9 @@ class ProtoNet(nn.Module):
             print(ind.shape)
             for way in range(n_way):
                 for shot in range(self.augment_size):
+                    print(ind[way][shot])
+                    print(topk_mask[0][ind[way][shot]][way])
+                    print(sim[0][ind[way][shot]][way])
                     topk_mask[0][ind[way][shot]][way] = sim[0][ind[way][shot]][way]
 
             sim = sim * topk_mask
