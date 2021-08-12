@@ -2,6 +2,7 @@ import argparse
 import os.path as osp
 
 import torch
+import torchvision
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import wandb
