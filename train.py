@@ -39,19 +39,19 @@ if __name__ == '__main__':
     torch.manual_seed(0)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--max-epoch', type=int, default=200)
+    parser.add_argument('--max-epoch', type=int, default=61)
     parser.add_argument('--save-epoch', type=int, default=20)
-    parser.add_argument('--shot', type=int, default=1)
+    parser.add_argument('--shot', type=int, default=5)
     parser.add_argument('--query', type=int, default=15)
     parser.add_argument('--way', type=int, default=5)
     parser.add_argument('--save-path', default='./models/proto-1')
     parser.add_argument('--gpu', default='0')
-    parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12', 'WRN28'])
+    parser.add_argument('--model', type=str, choices=['Conv64', 'ResNet12', 'WRN28'], default='ResNet12')
     parser.add_argument('--schedule', type=str, choices=['step'], default='step')
     parser.add_argument('--step-size', type=int, default=20)
     parser.add_argument('--drop-rate', type=float, default=0.1)
     parser.add_argument('--gamma', type=float, default=0.2)
-    parser.add_argument('--lr', type=float, default=0.0001)
+    parser.add_argument('--lr', type=float, default=0.0002)
     parser.add_argument('--project', type=str, default='CNNF-Prototype')
     parser.add_argument('--restore-from', type=str, default="")
 
@@ -69,18 +69,22 @@ if __name__ == '__main__':
 
     parser.add_argument('--bias-shift', action='store_true', default=False)
     parser.add_argument('--ind-layer', type=int, default=0)
-    parser.add_argument('--ind-block', type=int, default=1)
+    parser.add_argument('--ind-block', type=int, default=0)
     parser.add_argument('--use-cosine-similarity', action='store_true', default=False)
     parser.add_argument('--memory-size', type=int, default=256)
-    parser.add_argument('--memory-start', type=int, default=0)
+    parser.add_argument('--memory-start', type=int, default=1)
+    parser.add_argument('--augment-size', type=int, default = 32)
+    parser.add_argument('--memory-weight', type=int, default = 0.2)
+    parser.add_argument('--use-training-labels', action='store_true', default=False)
+    parser.add_argument('--no-save', action='store_true', default=False)
 
-    parser.add_argument('--cycles', type=int, default = 2)
+    parser.add_argument('--cycles', type=int, default = 0)
 
     args = parser.parse_args()
     pprint(vars(args))
 
     set_gpu(args.gpu)
-    ensure_path(args.save_path)
+    # ensure_path(args.save_path)
 
     wandb.init(project=args.project, config=args)
 
@@ -131,101 +135,102 @@ if __name__ == '__main__':
 
     wandb.watch(model, log_freq=10)
     label, label_support = prepare_label(args)
-    with torch.autograd.set_detect_anomaly(True):
-        for epoch in range(1, args.max_epoch + 1):
-            memory_bank = True if epoch >= args.memory_start else False
-            print("Epoch " + str(epoch))
-            lr_scheduler.step()
+    for epoch in range(1, args.max_epoch + 1):
+        memory_bank = True if epoch >= args.memory_start else False
+        print("Epoch " + str(epoch))
+        lr_scheduler.step()
 
-            model.train()
+        model.train()
 
-            tl = Averager()
-            ta = Averager()
-            with tqdm(train_loader, total=args.episodes_per_epoch) as pbar:
-                for i, batch in enumerate(pbar, 1):
-                    data, target = [_.cuda() for _ in batch]
-                    support_label = target[:args.shot * args.way]
+        tl = Averager()
+        ta = Averager()
+        with tqdm(train_loader, total=args.episodes_per_epoch) as pbar:
+            for i, batch in enumerate(pbar, 1):
+                data, target = [_.cuda() for _ in batch]
+                support_label = target[:args.shot * args.way]
 
-                    # logits, labels = model(data, memory_bank = memory_bank)
-                    # loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
+                # logits, labels = model(data, memory_bank = memory_bank)
+                # loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 
-                    logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = target)
-                    loss = F.cross_entropy(logits, label)
+                logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = target)
+                loss = F.cross_entropy(logits, label)
 
-                    acc = count_acc(logits, label)
-                    pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
+                acc = count_acc(logits, label)
+                pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
 
-                    tl.add(loss.item())
-                    ta.add(acc)
+                tl.add(loss.item())
+                ta.add(acc)
 
-                    optimizer.zero_grad()
-                    loss.backward()
-                    optimizer.step()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
-
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
 
 
-                    proto = None; logits = None; loss = None
 
-                tl = tl.item()
-                ta = ta.item()
+                proto = None; logits = None; loss = None
 
-                model.eval()
+            tl = tl.item()
+            ta = ta.item()
 
-                vl = Averager()
-                va = Averager()
+            model.eval()
 
-                for i, batch in enumerate(val_loader, 1):
-                    data, target = [_.cuda() for _ in batch]
-                    support_label = target[:args.shot * args.way]
+            vl = Averager()
+            va = Averager()
 
-                    logits = model(data, memory_bank = memory_bank, mode = "val", debug_labels = target)
-                    loss = F.cross_entropy(logits, label)
+            for i, batch in enumerate(val_loader, 1):
+                data, target = [_.cuda() for _ in batch]
+                support_label = target[:args.shot * args.way]
 
-                    acc = count_acc(logits, label)
+                logits = model(data, memory_bank = memory_bank, mode = "val", debug_labels = target)
+                loss = F.cross_entropy(logits, label)
 
-                    vl.add(loss.item())
-                    va.add(acc)
+                acc = count_acc(logits, label)
 
-                    proto = None; logits = None; loss = None
+                vl.add(loss.item())
+                va.add(acc)
 
-                vl = vl.item()
-                va = va.item()
+                proto = None; logits = None; loss = None
 
-                if (epoch - 1) % 20 == 0:
-                    ave_acc = Averager()
-                    model.memory_bank.reset(mode = "eval")
+            vl = vl.item()
+            va = va.item()
 
-                    with torch.no_grad():
-                        for i, batch in enumerate(test_loader, 1):
-                            data, target = [_.cuda() for _ in batch]
-                            support_label = target[:args.shot * args.way]
+            if (epoch - 1) % 20 == 0:
+                ave_acc = Averager()
+                model.memory_bank.reset(mode = "eval")
 
-                            logits = model(data, memory_bank = memory_bank, mode = "eval", debug_labels = target)
-                            loss = F.cross_entropy(logits, label)
+                with torch.no_grad():
+                    for i, batch in enumerate(test_loader, 1):
+                        data, target = [_.cuda() for _ in batch]
+                        support_label = target[:args.shot * args.way]
 
-                            acc = count_acc(logits, label)
-                            ave_acc.add(acc)
-                    wandb.log({"eval_acc": ave_acc.item()}, step=epoch - 1)
+                        logits = model(data, memory_bank = memory_bank, mode = "eval", debug_labels = target)
+                        loss = F.cross_entropy(logits, label)
 
-                print('Epoch {}, val, loss={:.4f} acc={:.4f}'.format(epoch, vl, va))
-                wandb.log({"train_loss": tl, "train_acc": ta, "test_loss": vl, "test_acc": va})
+                        acc = count_acc(logits, label)
+                        ave_acc.add(acc)
+                wandb.log({"eval_acc": ave_acc.item()}, step=epoch - 1)
 
-                if va > trlog['max_acc']:
-                    trlog['max_acc'] = va
+            print('Epoch {}, val, loss={:.4f} acc={:.4f}'.format(epoch, vl, va))
+            wandb.log({"train_loss": tl, "train_acc": ta, "test_loss": vl, "test_acc": va})
+
+            if va > trlog['max_acc']:
+                trlog['max_acc'] = va
+                if not args.no_save:
                     save_model('max-acc')
 
-                trlog['train_loss'].append(tl)
-                trlog['train_acc'].append(ta)
-                trlog['val_loss'].append(vl)
-                trlog['val_acc'].append(va)
+            trlog['train_loss'].append(tl)
+            trlog['train_acc'].append(ta)
+            trlog['val_loss'].append(vl)
+            trlog['val_acc'].append(va)
 
-                torch.save(trlog, osp.join(args.save_path, 'trlog'))
+            torch.save(trlog, osp.join(args.save_path, 'trlog'))
 
+            if not args.no_save:
                 save_model('epoch-last')
 
-                if epoch % args.save_epoch == 0:
-                    save_model('epoch-{}'.format(epoch))
+            if epoch % args.save_epoch == 0 and not args.no_save:
+                save_model('epoch-{}'.format(epoch))
 
-                print('ETA:{}/{}'.format(timer.measure(), timer.measure(epoch / args.max_epoch)))
+            print('ETA:{}/{}'.format(timer.measure(), timer.measure(epoch / args.max_epoch)))
 
