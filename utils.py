@@ -127,7 +127,7 @@ query_transform = torchvision.transforms.Compose([
 ])
 
 def query_augment(batch, args):
-    batch[args.way * args.shot:] = query_transform(data[args.way * args.shot:])
+    batch[args.way * args.shot:] = query_transform(batch[args.way * args.shot:])
 
 def get_dataloader(args):
     if args.dataset == 'MiniImageNet':
