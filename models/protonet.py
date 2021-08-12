@@ -51,7 +51,7 @@ class ProtoNet(nn.Module):
             if mode == "train":
                  self.memory_bank.add_image_memory(x[query_idx.flatten()].view(self.args.way * self.args.query, 3,84,84), mode = mode)
             if debug_labels is not None:
-                self.memory_bank.add_embedding_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + self.args.query)], mode = "debug")
+                self.memory_bank.add_debug_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + self.args.query)], mode = mode)
 
             logits = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
 
@@ -61,7 +61,7 @@ class ProtoNet(nn.Module):
                 self.memory_bank.add_image_memory(x[support_idx.flatten()].view(self.args.way * self.args.shot,3,84,84), mode = mode)
 
             if debug_labels is not None:
-                self.memory_bank.add_embedding_memory(debug_labels[:self.args.way*self.args.shot], mode = "debug")
+                self.memory_bank.add_debug_memory(debug_labels[:self.args.way*self.args.shot], mode = mode)
 
             if self.training:
                 #class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
@@ -106,7 +106,7 @@ class ProtoNet(nn.Module):
 
         return logits
 
-    def get_similarity_scores(self, support, memory):
+    def get_similarity_scores(self, support, memory, alpha = 0.2):
         """
         Compute the average cosine similarity matrix between support and memory
         Inputs:
@@ -117,13 +117,13 @@ class ProtoNet(nn.Module):
         basic_proto = support.mean(dim=1) # [batch_size, n_way, n_dim]
         basic_proto = F.normalize(basic_proto, dim=-1)
         # [batch_size, n_shot + n_memory, n_way, n_dim] x [batch_size, n_way, n_dim] -> # [batch_size, n_shot + n_memory, n_way]
-        sim = F.cosine_similarity(memory, basic_proto, dim=-1)
-        return sim
+        sim = (F.cosine_similarity(memory, basic_proto, dim=-1) + 1) / 2 # Normalized similarity
+        return torch.exp(alpha * sim)
 
     def compute_prototypes(self, support, memory_bank = False, mode="train", debug_labels = None):
         if memory_bank:
             memory = self.memory_bank.get_embedding_memory(mode=mode)
-            label_memory = self.memory_bank.get_embedding_memory(mode="debug")
+            label_memory = self.memory_bank.get_debug_memory(mode=mode)
             if mode == "train":
                 image_memory = self.memory_bank.get_image_memory(mode="train")
 
@@ -133,8 +133,8 @@ class ProtoNet(nn.Module):
             shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
             sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_shot + n_memory, n_way]
 
-            mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([0.2]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
-            sim = sim * mask_weight
+            # mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([0.2]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
+            # sim = sim * mask_weight
 
             sim_topk, ind = torch.topk(sim, self.augment_size, dim=1) # [batch_size, augment_size, n_way]
             shot_memory_topk = Variable(torch.zeros(batch_size, self.augment_size, n_way, n_dim).cuda())
@@ -146,10 +146,12 @@ class ProtoNet(nn.Module):
                         labels_topk[0][shot][way] = debug_labels[way]
                     else: # Updated embedding
                         memory_ind = ind[0][shot][way] - self.args.shot
+                        # Only pull from same class
+                        if label_memory[memory_ind] != debug_labels[way]:
+                            sim_topk[0][shot][way] = 0
                         labels_topk[0][shot][way] = label_memory[memory_ind]
                         shot_memory_topk[0][shot][way] = self.encoder(image_memory[memory_ind].unsqueeze(0)).squeeze()
 
-            print(labels_topk)
             sim_topk = sim_topk.unsqueeze(-1)
             proto = (sim_topk * shot_memory_topk).sum(dim=1) / sim_topk.sum(dim=1) # [batch_size, n_way, n_dim]
             return proto

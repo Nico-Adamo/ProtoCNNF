@@ -175,7 +175,6 @@ if __name__ == '__main__':
             vl = Averager()
             va = Averager()
 
-            model.memory_bank.reset(mode = "val")
             for i, batch in enumerate(val_loader, 1):
                 data, target = [_.cuda() for _ in batch]
                 support_label = target[:args.shot * args.way]

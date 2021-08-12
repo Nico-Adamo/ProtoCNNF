@@ -11,8 +11,9 @@ class MemoryBank(nn.Module):
         super().__init__()
         self.size = size
         # Possible self.bias to add to cosine matrix?
-        self.embedding_memory = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda(), "debug": torch.tensor([]).cuda()}
-        self.image_memory = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda(), "debug": torch.tensor([]).cuda()}
+        self.embedding_memory = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda()}
+        self.image_memory = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda()}
+        self.debug_memory = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda()}
 
         self._debug_count = 0
 
@@ -61,7 +62,19 @@ class MemoryBank(nn.Module):
         else:
             self.image_memory[mode] = torch.cat((memory[data.shape[0]:], data))
 
+    def add_debug_memory(self, data, mode = "train"):
+        memory = self.debug_memory[mode]
+        # Add memory to the end of the memory bank
+        # data: [batch_size, emb_size]
+        if memory.size(0) < self.size:
+            self.debug_memory[mode] = torch.cat((memory, data))
+        else:
+            self.debug_memory[mode] = torch.cat((memory[data.shape[0]:], data))
+
     def get_embedding_memory(self, mode = "train"):
+        return self.embedding_memory[mode]
+
+    def get_debug_memory(self, mode = "train"):
         return self.embedding_memory[mode]
 
     def get_image_memory(self, mode = "train"):
@@ -73,4 +86,5 @@ class MemoryBank(nn.Module):
     def reset(self, mode = "train"):
         self.embedding_memory[mode] = torch.tensor([]).cuda()
         self.image_memory[mode] = torch.tensor([]).cuda()
+        self.debug_memory[mode] = torch.tensor([]).cuda()
 
