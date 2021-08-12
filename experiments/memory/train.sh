@@ -10,5 +10,6 @@ python3 train.py --max-epoch 200 \
                  --augment-size 16 \
                  --memory-weight 0.5 \
                  --memory-size 256 \
-                 --test-transduction-steps 10
+                 --test-transduction-steps 10 \
+                 --adaptive-distance
 

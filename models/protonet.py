@@ -26,6 +26,33 @@ class ProtoNet(nn.Module):
 
         # self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
         # nn.init.xavier_uniform_(self.global_w.weight)
+        if args.adaptive_distance:
+            self.layer1_rn = nn.Sequential(
+                    nn.UpsamplingNearest2d(scale_factor=4),
+                    nn.Conv2d(640,320,kernel_size=2,padding=0),
+                    nn.BatchNorm2d(320, momentum=1, affine=True),
+                    nn.ReLU(),
+                    nn.MaxPool2d(2))
+            self.fc1_rn = nn.Sequential(
+                    nn.Linear(320 * 1 * 1, 160),
+                    nn.BatchNorm1d(160, momentum=1, affine=True),
+                    nn.ReLU())
+            self.fc2_rn = nn.Linear(160, 1)
+            nn.init.xavier_uniform_(self.fc2_rn.weight)
+            self.alpha = nn.Parameter(torch.Tensor(1))
+            nn.init.constant_(self.alpha, 0)
+            self.beta = nn.Parameter(torch.Tensor(1))
+            nn.init.constant_(self.beta, 0)
+
+    def instance_scale(self, x):
+        out = x.view(x.size(0), 640, 1, 1)
+        out = self.layer1_rn(out)
+        out = out.view(out.size(0), -1)
+        out = self.fc1_rn(out)
+        out = self.fc2_rn(out)
+        out = torch.sigmoid(out)
+        out = torch.exp(self.alpha) * out + torch.exp(self.beta)
+        return out
 
     def split_instances(self, data):
         args = self.args
@@ -71,7 +98,7 @@ class ProtoNet(nn.Module):
         batch_size, n_shot, n_way, n_dim = support.shape
         if memory_bank:
             proto = support.mean(dim=1)
-            for i in range(self.args.test_transduction_steps if mode == "test" or mode == "eval" else 0):
+            for i in range(self.args.test_transduction_steps if mode == "eval" else 0):
                 proto = self.compute_memory_prototypes(support, mode = mode, prototype_compare = proto, debug_labels = debug_labels)
         else:
             proto = support.mean(dim=1)
@@ -134,6 +161,14 @@ class ProtoNet(nn.Module):
 
         mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([self.args.memory_weight]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
         sim = sim * mask_weight
+
+        # Per-instance temperature
+        if self.args.adaptive_distance:
+            memory_weights = self.instance_scale(memory)
+            support_weights = self.instance_scale(support.view(batch_size * n_shot * n_way, n_dim)).view(batch_size, n_shot, n_way)
+            memory_weights_x = memory_weights.view(batch_size, n_memory, 1).expand(-1, -1, n_way) # [batch_size, n_shot + n_memory, n_way]
+            shot_memory_weights = torch.cat([support_weights, memory_weights_x], dim=1) # [batch_size, n_shot + n_memory, n_way]
+            sim = sim / shot_memory_weights
 
         if self.training and self.args.use_training_labels:
             mask_class = torch.ones_like(sim).cuda()
