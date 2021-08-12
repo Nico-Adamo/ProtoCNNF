@@ -96,10 +96,6 @@ if __name__ == '__main__':
 
     model = ProtoNet(args).cuda()
 
-    query_transform = torchvision.transforms.Compose([
-        Cutout(21)
-    ])
-
     if args.restore_from != "":
         print("Restoring from {}".format(args.restore_from))
         model_dict = model.state_dict()
@@ -150,8 +146,6 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, target = [_.cuda() for _ in batch]
 
-                if args.query_augment:
-                    data[args.way * args.shot:] = query_transform(data[args.way * args.shot:])
                 # logits, labels = model(data, memory_bank = memory_bank)
                 # loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 

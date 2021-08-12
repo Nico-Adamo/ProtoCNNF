@@ -77,48 +77,6 @@ def pprint(x):
 def l2_loss(pred, label):
     return ((pred - label)**2).sum() / len(pred) / 2
 
-def get_dataloader(args):
-    if args.dataset == 'MiniImageNet':
-        from mini_imagenet import MiniImageNet as Dataset
-    else:
-        raise ValueError('Non-supported Dataset.')
-
-    testset = Dataset('test', args)
-    test_sampler = CategoriesSampler(testset.label,
-                                2000, # args.num_eval_episodes,
-                                args.way, args.shot + args.query)
-    test_loader = DataLoader(dataset=testset,
-                                batch_sampler=test_sampler,
-                                num_workers=args.num_workers,
-                                pin_memory=True)
-
-    num_device = torch.cuda.device_count()
-    num_episodes = args.episodes_per_epoch*num_device if args.multi_gpu else args.episodes_per_epoch
-    num_workers=args.num_workers*num_device if args.multi_gpu else args.num_workers
-    trainset = Dataset('train', args, augment=args.augment)
-    args.num_class = trainset.num_class
-    train_sampler = CategoriesSampler(trainset.label,
-                                      num_episodes,
-                                      args.way,
-                                      args.shot + args.query)
-
-    train_loader = DataLoader(dataset=trainset,
-                                  num_workers=num_workers,
-                                  batch_sampler=train_sampler,
-                                  pin_memory=True)
-
-    valset = Dataset('val', args)
-    val_sampler = CategoriesSampler(valset.label,
-                            args.num_eval_episodes,
-                            args.way, args.shot + args.query)
-    val_loader = DataLoader(dataset=valset,
-                            batch_sampler=val_sampler,
-                            num_workers=args.num_workers,
-                            pin_memory=True)
-
-
-    return train_loader, val_loader, test_loader
-
 class Cutout(object):
     """Randomly mask out one or more patches from an image.
     Args:
@@ -155,17 +113,66 @@ class Cutout(object):
 
         return img
 
-def to_tensor():
-    def _to_tensor(image):
-        if len(image.shape) == 3:
-            return torch.from_numpy(
-                image.transpose(2, 0, 1).astype(np.float32)).cuda()
-        else:
-            return torch.from_numpy(image[None, :, :].astype(np.float32)).cuda()
+def get_collate(args, batch_transform=None):
+    def mycollate(batch):
+        collated = torch.utils.data.dataloader.default_collate(batch)
+        if batch_transform is not None:
+            collated = batch_transform(collated, args)
+        return collated
+    return mycollate
 
-    return _to_tensor
+query_transform = torchvision.transforms.Compose([
+        Cutout(21)
+])
 
-def from_tensor():
-    def _from_tensor(image):
-        return np.asarray(image.cpu()).astype(np.float32)
-    return _from_tensor
+def query_augment(batch, args):
+    batch[args.way * args.shot:] = query_transform(data[args.way * args.shot:])
+
+def get_dataloader(args):
+    if args.dataset == 'MiniImageNet':
+        from mini_imagenet import MiniImageNet as Dataset
+    else:
+        raise ValueError('Non-supported Dataset.')
+
+    testset = Dataset('test', args)
+    test_sampler = CategoriesSampler(testset.label,
+                                2000, # args.num_eval_episodes,
+                                args.way, args.shot + args.query)
+    test_loader = DataLoader(dataset=testset,
+                                batch_sampler=test_sampler,
+                                num_workers=args.num_workers,
+                                pin_memory=True)
+
+    num_device = torch.cuda.device_count()
+    num_episodes = args.episodes_per_epoch*num_device if args.multi_gpu else args.episodes_per_epoch
+    num_workers=args.num_workers*num_device if args.multi_gpu else args.num_workers
+    trainset = Dataset('train', args, augment=args.augment)
+    args.num_class = trainset.num_class
+    train_sampler = CategoriesSampler(trainset.label,
+                                    num_episodes,
+                                    args.way,
+                                    args.shot + args.query)
+
+    if args.query_augment:
+        train_loader = DataLoader(dataset=trainset,
+                                    num_workers=num_workers,
+                                    batch_sampler=train_sampler,
+                                    pin_memory=True, collate_fn = get_collate(args, batch_transform = query_transform))
+    else:
+        train_loader = DataLoader(dataset=trainset,
+                                    num_workers=num_workers,
+                                    batch_sampler=train_sampler,
+                                    pin_memory=True)
+
+    valset = Dataset('val', args)
+    val_sampler = CategoriesSampler(valset.label,
+                            args.num_eval_episodes,
+                            args.way, args.shot + args.query)
+    val_loader = DataLoader(dataset=valset,
+                            batch_sampler=val_sampler,
+                            num_workers=args.num_workers,
+                            pin_memory=True)
+
+
+    return train_loader, val_loader, test_loader
+
