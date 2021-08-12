@@ -223,8 +223,8 @@ if __name__ == '__main__':
             trlog['train_acc'].append(ta)
             trlog['val_loss'].append(vl)
             trlog['val_acc'].append(va)
-
-            torch.save(trlog, osp.join(args.save_path, 'trlog'))
+            if not args.no_save:
+                torch.save(trlog, osp.join(args.save_path, 'trlog'))
 
             if not args.no_save:
                 save_model('epoch-last')
