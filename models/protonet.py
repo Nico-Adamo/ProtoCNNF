@@ -131,7 +131,7 @@ class ProtoNet(nn.Module):
             sim = sim * mask_weight
 
             topk, ind = torch.topk(sim, self.augment_size, dim=1)
-            topk_mask = torch.zeros(self.augment_size, n_way, n_dim)
+            topk_mask = torch.zeros_like(sim)
             for way in range(n_way):
                 for shot in range(self.augment_size):
                     topk_mask[0][ind[way][shot]][way] = sim[0][ind[way][shot]][way]
