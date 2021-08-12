@@ -140,7 +140,7 @@ class ProtoNet(nn.Module):
             for way in range(n_way):
                 for shot in range(self.augment_size):
                     if ind[0][shot][way] < self.args.shot or mode == "eval" or mode == "val": # Support embedding, no need to update
-                        shot_memory_topk[0][shot][way] = shot_memory_p[0][ind[0][shot][way]][way]
+                        shot_memory_topk[0][shot][way] = shot_memory[0][ind[0][shot][way]][way]
                         labels_topk[0][shot][way] = debug_labels[way]
                     else: # Updated embedding
                         memory_ind = ind[0][shot][way] - self.args.shot
