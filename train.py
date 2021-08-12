@@ -14,7 +14,7 @@ from models.convnet import Convnet
 from models.resnet import ResNet
 from models.wrn import WideResNet
 from models.protonet import ProtoNet
-from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader, cutout, from_tensor, to_tensor
+from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader, Cutout, from_tensor, to_tensor
 from tqdm import tqdm
 import torch.nn as nn
 
@@ -97,9 +97,7 @@ if __name__ == '__main__':
     model = ProtoNet(args).cuda()
 
     query_transform = torchvision.transforms.Compose([
-        from_tensor(),
-        cutout(21, 0.5, False),
-        to_tensor(),
+        Cutout(21)
     ])
 
     if args.restore_from != "":
