@@ -98,7 +98,7 @@ class ProtoNet(nn.Module):
         batch_size, n_shot, n_way, n_dim = support.shape
         if memory_bank:
             proto = support.mean(dim=1)
-            for i in range(self.args.test_transduction_steps if mode == "eval" else 0):
+            for i in range(self.args.test_transduction_steps if mode == "eval" else 1):
                 proto = self.compute_memory_prototypes(support, mode = mode, prototype_compare = proto, debug_labels = debug_labels)
         else:
             proto = support.mean(dim=1)
