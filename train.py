@@ -22,16 +22,19 @@ def prepare_label(args):
 
     # prepare one-hot label
     label = torch.arange(args.way, dtype=torch.int16).repeat(args.query)
+    label_test = torch.arange(args.way, dtype=torch.int16).repeat(args.test_query)
     label_support = torch.arange(args.way, dtype=torch.int16)
 
     label = label.type(torch.LongTensor)
     label_support = label_support.type(torch.LongTensor)
+    label_test = label_test.type(torch.LongTensor)
 
     if torch.cuda.is_available():
         label = label.cuda()
         label_support = label_support.cuda()
+        label_test = label_test.cuda()
 
-    return label, label_support
+    return label, label_support, label_test
 
 def save_model(name):
     torch.save(model.state_dict(), osp.join(args.save_path, name + '.pth'))
@@ -133,7 +136,7 @@ if __name__ == '__main__':
     timer = Timer()
 
     wandb.watch(model, log_freq=10)
-    label, label_support = prepare_label(args)
+    label, label_support, label_test = prepare_label(args)
     for epoch in range(1, args.max_epoch + 1):
         memory_bank = True if epoch >= args.memory_start else False
         print("Epoch " + str(epoch))
@@ -178,12 +181,11 @@ if __name__ == '__main__':
 
             for i, batch in enumerate(val_loader, 1):
                 data, target = [_.cuda() for _ in batch]
-                support_label = target[:args.shot * args.way]
 
                 logits = model(data, memory_bank = memory_bank, mode = "val", debug_labels = target)
-                loss = F.cross_entropy(logits, label)
+                loss = F.cross_entropy(logits, label_test)
 
-                acc = count_acc(logits, label)
+                acc = count_acc(logits, label_test)
 
                 vl.add(loss.item())
                 va.add(acc)
@@ -200,12 +202,11 @@ if __name__ == '__main__':
                 with torch.no_grad():
                     for i, batch in enumerate(test_loader, 1):
                         data, target = [_.cuda() for _ in batch]
-                        support_label = target[:args.shot * args.way]
 
                         logits = model(data, memory_bank = memory_bank, mode = "eval", debug_labels = target)
-                        loss = F.cross_entropy(logits, label)
+                        loss = F.cross_entropy(logits, label_test)
 
-                        acc = count_acc(logits, label)
+                        acc = count_acc(logits, label_test)
                         ave_acc.add(acc)
                 wandb.log({"eval_acc": ave_acc.item()}, step=epoch - 1)
 
