@@ -129,15 +129,24 @@ class ProtoNet(nn.Module):
 
             mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([0.2]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
             sim = sim * mask_weight
-            if self.training:
-                mask_class = torch.ones_like(sim).cuda()
-                for way in range(n_way):
-                    for shot in range(sim.size(1)):
-                        memory_ind = shot - self.args.shot
-                        if label_memory[memory_ind] != debug_labels[way]:
-                            mask_class[0][shot][way] = 0
 
-                sim = sim * mask_class
+            topk, ind = torch.topk(sim, self.augment_size, dim=1)
+            topk_mask = torch.zeros(self.augment_size, n_way, n_dim)
+            for way in range(n_way):
+                for shot in range(self.augment_size):
+                    topk_mask[0][ind[way][shot]][way] = sim[0][ind[way][shot]][way]
+
+            sim = sim * topk_mask
+
+            # if self.training:
+            #     mask_class = torch.ones_like(sim).cuda()
+            #     for way in range(n_way):
+            #         for shot in range(sim.size(1)):
+            #             memory_ind = shot - self.args.shot
+            #             if label_memory[memory_ind] != debug_labels[way]:
+            #                 mask_class[0][shot][way] = 0
+
+            #     sim = sim * mask_class
             sim = sim.unsqueeze(-1)
             proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
             return proto
