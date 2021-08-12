@@ -75,7 +75,7 @@ class MemoryBank(nn.Module):
         return self.embedding_memory[mode]
 
     def get_debug_memory(self, mode = "train"):
-        return self.embedding_memory[mode]
+        return self.debug_memory[mode]
 
     def get_image_memory(self, mode = "train"):
         return self.image_memory[mode]
