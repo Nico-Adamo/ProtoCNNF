@@ -2,6 +2,7 @@ import os
 import shutil
 import time
 import pprint
+import numpy as np
 
 import torch
 from samplers import CategoriesSampler
