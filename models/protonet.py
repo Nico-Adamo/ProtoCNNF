@@ -67,8 +67,11 @@ class ProtoNet(nn.Module):
             # feature extraction
             n_query = self.args.query if mode == "train" else self.args.test_query
             x = x.squeeze(0)
-            instance_embs = self.encoder(x) # If inter cycle: [cycles + 1, 6 - ind_block, n_batch, n_emb]
-                                                                                      # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
+            instance_embs = self.encoder(x) # (n_batch, way * (shot+query), n_dim)
+
+            # Power transformation:
+            instance_embs = F.normalize(torch.sqrt(instance_embs + 1e-6), p=2, dim=-1)
+
             memory_bank = True if self.memory_bank.get_length(mode=mode) > 100 and memory_bank else False
 
             support_idx, query_idx = self.split_instances(x, mode=mode)
