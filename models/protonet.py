@@ -106,7 +106,7 @@ class ProtoNet(nn.Module):
 
         return logits
 
-    def get_similarity_scores(self, support, memory, alpha = 0.2):
+    def get_similarity_scores(self, support, memory, alpha = 1):
         """
         Compute the average cosine similarity matrix between support and memory
         Inputs:
@@ -135,32 +135,33 @@ class ProtoNet(nn.Module):
 
             # mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([0.2]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
             # sim = sim * mask_weight
+
+            mask_class = torch.ones_like(sim).cuda()
             for way in range(n_way):
                 for shot in range(sim.size(1)):
                     memory_ind = shot - self.args.shot
                     if label_memory[memory_ind] != debug_labels[way]:
-                        sim[0][shot][way] = 0
+                        mask_class[0][shot][way] = 0
+
+            sim = sim * mask_class
 
             sim_topk, ind = torch.topk(sim, self.augment_size, dim=1) # [batch_size, augment_size, n_way]
-            shot_memory_topk = Variable(torch.zeros(batch_size, self.augment_size, n_way, n_dim).cuda())
-            labels_topk = Variable(torch.zeros(batch_size, self.augment_size, n_way).cuda())
-            for way in range(n_way):
-                for shot in range(self.augment_size):
-                    if ind[0][shot][way] < self.args.shot or mode == "eval" or mode == "val": # Support embedding, no need to update
-                        shot_memory_topk[0][shot][way] = shot_memory[0][ind[0][shot][way]][way]
-                        labels_topk[0][shot][way] = debug_labels[way]
-                    else: # Updated embedding
-                        memory_ind = ind[0][shot][way] - self.args.shot
-                        # Only pull from same class
-                        labels_topk[0][shot][way] = label_memory[memory_ind]
-                        shot_memory_topk[0][shot][way] = self.encoder(image_memory[memory_ind].unsqueeze(0)).squeeze()
-
-            print(labels_topk)
             print(sim_topk)
-            print("")
+            # shot_memory_topk = Variable(torch.zeros(batch_size, self.augment_size, n_way, n_dim).cuda())
+            # labels_topk = Variable(torch.zeros(batch_size, self.augment_size, n_way).cuda())
+            # for way in range(n_way):
+            #     for shot in range(self.augment_size):
+            #         if ind[0][shot][way] < self.args.shot or mode == "eval" or mode == "val": # Support embedding, no need to update
+            #             shot_memory_topk[0][shot][way] = shot_memory[0][ind[0][shot][way]][way]
+            #             labels_topk[0][shot][way] = debug_labels[way]
+            #         else: # Updated embedding
+            #             memory_ind = ind[0][shot][way] - self.args.shot
+            #             # Only pull from same class
+            #             labels_topk[0][shot][way] = label_memory[memory_ind]
+            #             shot_memory_topk[0][shot][way] = self.encoder(image_memory[memory_ind].unsqueeze(0)).squeeze()
 
-            sim_topk = sim_topk.unsqueeze(-1)
-            proto = (sim_topk * shot_memory_topk).sum(dim=1) / sim_topk.sum(dim=1) # [batch_size, n_way, n_dim]
+            # sim_topk = sim_topk.unsqueeze(-1)
+            proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
             return proto
         else:
             return support.mean(dim=1)
