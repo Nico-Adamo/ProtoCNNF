@@ -23,7 +23,7 @@ class ProtoNet(nn.Module):
             raise ValueError('')
 
         self.memory_bank = MemoryBank(args.memory_size)
-        self.augment_size = 16 # "Make everything n-shot"
+        self.augment_size = 32 # "Make everything n-shot"
 
         # self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
         # nn.init.xavier_uniform_(self.global_w.weight)
@@ -102,7 +102,7 @@ class ProtoNet(nn.Module):
 
         return logits
 
-    def get_similarity_scores(self, support, memory, alpha = 0.2):
+    def get_similarity_scores(self, support, memory, alpha = 1):
         """
         Compute the average cosine similarity matrix between support and memory
         Inputs:
