@@ -95,6 +95,7 @@ class ProtoNet(nn.Module):
         else: # cosine similarity: more memory efficient
             proto = F.normalize(proto, dim=-1) # normalize for cosine distance
             query = query.view(num_batch, -1, emb_dim) # (Nbatch,  Nq*Nw, d)
+            query = F.normalize(query, dim=-1)
 
             # (num_batch,  num_emb, num_proto) * (num_batch, num_query*num_proto, num_emb) -> (num_batch, num_query*num_proto, num_proto)
             # (Nb, Nq*Np, d) * (Nb, d, Np) -> (Nb, Nq*Nw, Np)
@@ -151,9 +152,9 @@ class ProtoNet(nn.Module):
                             sim_topk[0][shot][way] = 0
                         labels_topk[0][shot][way] = label_memory[memory_ind]
                         shot_memory_topk[0][shot][way] = self.encoder(image_memory[memory_ind].unsqueeze(0)).squeeze()
-            print(labels_topk)
-            print(sim_topk)
-            print("")
+            # print(labels_topk)
+            # print(sim_topk)
+            # print("")
 
             sim_topk = sim_topk.unsqueeze(-1)
             proto = (sim_topk * shot_memory_topk).sum(dim=1) / sim_topk.sum(dim=1) # [batch_size, n_way, n_dim]
