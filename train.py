@@ -149,7 +149,7 @@ if __name__ == '__main__':
                 # logits, labels = model(data, memory_bank = memory_bank)
                 # loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 
-                logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = support_label)
+                logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = target)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -180,7 +180,7 @@ if __name__ == '__main__':
                 data, target = [_.cuda() for _ in batch]
                 support_label = target[:args.shot * args.way]
 
-                logits = model(data, memory_bank = memory_bank, mode = "val", debug_labels = support_label)
+                logits = model(data, memory_bank = memory_bank, mode = "val", debug_labels = target)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -202,7 +202,7 @@ if __name__ == '__main__':
                         data, target = [_.cuda() for _ in batch]
                         support_label = target[:args.shot * args.way]
 
-                        logits = model(data, memory_bank = memory_bank, mode = "eval", debug_labels = support_label)
+                        logits = model(data, memory_bank = memory_bank, mode = "eval", debug_labels = target)
                         loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)

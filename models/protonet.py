@@ -47,9 +47,11 @@ class ProtoNet(nn.Module):
             support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
             query = instance_embs[query_idx.flatten()].view(*(query_idx.shape   + (-1,)))
 
-            # self.memory_bank.add_embedding_memory(query.view(self.args.way * self.args.query, 640).detach(), mode = mode)
-            # if mode == "train":
-            #     self.memory_bank.add_image_memory(x[query_idx.flatten()].view(self.args.way * self.args.query, 3,84,84), mode = mode)
+            self.memory_bank.add_embedding_memory(query.view(self.args.way * self.args.query, 640).detach(), mode = mode)
+            if mode == "train":
+                 self.memory_bank.add_image_memory(x[query_idx.flatten()].view(self.args.way * self.args.query, 3,84,84), mode = mode)
+            if debug_labels is not None:
+                self.memory_bank.add_embedding_memory(debug_labels[self.args.way*self.args.shot:self.args.way * self.args.query], mode = "debug")
 
             logits = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
 
@@ -59,7 +61,7 @@ class ProtoNet(nn.Module):
                 self.memory_bank.add_image_memory(x[support_idx.flatten()].view(self.args.way * self.args.shot,3,84,84), mode = mode)
 
             if debug_labels is not None:
-                self.memory_bank.add_embedding_memory(debug_labels, mode = "debug")
+                self.memory_bank.add_embedding_memory(debug_labels[:self.args.way*self.args.shot], mode = "debug")
 
             if self.training:
                 #class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
@@ -148,7 +150,7 @@ class ProtoNet(nn.Module):
                         shot_memory_topk[0][shot][way] = self.encoder(image_memory[memory_ind].unsqueeze(0)).squeeze()
 
             print(labels_topk)
-
+            sim_topk = sim_topk.unsqueeze(-1)
             proto = (sim_topk * shot_memory_topk).sum(dim=1) / sim_topk.sum(dim=1) # [batch_size, n_way, n_dim]
             return proto
         else:
