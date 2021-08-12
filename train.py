@@ -14,7 +14,7 @@ from models.convnet import Convnet
 from models.resnet import ResNet
 from models.wrn import WideResNet
 from models.protonet import ProtoNet
-from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader, Cutout, from_tensor, to_tensor
+from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader
 from tqdm import tqdm
 import torch.nn as nn
 
