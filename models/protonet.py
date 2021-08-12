@@ -54,7 +54,8 @@ class ProtoNet(nn.Module):
         out = torch.exp(self.alpha) * out + torch.exp(self.beta)
         return out
 
-    def split_instances(self, data):
+    def split_instances(self, data, mode="train"):
+        query = self.args.query if mode == "train" else self.args.test_query
         args = self.args
         return  (torch.Tensor(np.arange(args.way*args.shot)).long().view(1, args.shot, args.way),
                     torch.Tensor(np.arange(args.way*args.shot, args.way * (args.shot + args.query))).long().view(1, args.query, args.way))
@@ -64,18 +65,19 @@ class ProtoNet(nn.Module):
             return self.encoder(x)
         else:
             # feature extraction
+            n_query = self.args.query if mode == "train" else self.args.test_query
             x = x.squeeze(0)
             instance_embs = self.encoder(x) # If inter cycle: [cycles + 1, 6 - ind_block, n_batch, n_emb]
                                                                                       # 6: [Pixel space, block 1, 2, 3, 4, pool/flatten][ind_block::]
             memory_bank = True if self.memory_bank.get_length(mode=mode) > 100 and memory_bank else False
 
-            support_idx, query_idx = self.split_instances(x)
+            support_idx, query_idx = self.split_instances(x, mode=mode)
             support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
             query = instance_embs[query_idx.flatten()].view(*(query_idx.shape   + (-1,)))
 
-            self.memory_bank.add_embedding_memory(query.view(self.args.way * self.args.query, 640).detach(), mode = mode)
+            self.memory_bank.add_embedding_memory(query.view(self.args.way * n_query, 640).detach(), mode = mode)
             if debug_labels is not None:
-                self.memory_bank.add_debug_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + self.args.query)], mode = mode)
+                self.memory_bank.add_debug_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + n_query)], mode = mode)
 
             logits = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
 
