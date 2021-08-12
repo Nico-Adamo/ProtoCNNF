@@ -148,7 +148,7 @@ if __name__ == '__main__':
                 # logits, labels = model(data, memory_bank = memory_bank)
                 # loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 
-                logits = model(data, memory_bank = memory_bank, mode = "train")
+                logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = target)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -176,10 +176,10 @@ if __name__ == '__main__':
 
             model.memory_bank.reset(mode = "val")
             for i, batch in enumerate(val_loader, 1):
-                data, _ = [_.cuda() for _ in batch]
+                data, target = [_.cuda() for _ in batch]
                 support_label = target[:args.shot * args.way]
 
-                logits = model(data, memory_bank = memory_bank, mode = "val")
+                logits = model(data, memory_bank = memory_bank, mode = "val", debug_labels = target)
                 loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
@@ -198,10 +198,10 @@ if __name__ == '__main__':
 
                 with torch.no_grad():
                     for i, batch in enumerate(test_loader, 1):
-                        data, _ = [_.cuda() for _ in batch]
+                        data, target = [_.cuda() for _ in batch]
                         support_label = target[:args.shot * args.way]
 
-                        logits = model(data, memory_bank = memory_bank, mode = "eval")
+                        logits = model(data, memory_bank = memory_bank, mode = "eval", debug_labels = target)
                         loss = F.cross_entropy(logits, label)
 
                         acc = count_acc(logits, label)
