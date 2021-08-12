@@ -93,13 +93,12 @@ class ProtoNet(nn.Module):
 
             logits = - torch.sum((proto - query) ** 2, 2) / self.args.temperature
         else: # cosine similarity: more memory efficient
-            proto_normalized = F.normalize(proto, dim=-1) # normalize for cosine distance
+            proto = F.normalize(proto, dim=-1) # normalize for cosine distance
             query = query.view(num_batch, -1, emb_dim) # (Nbatch,  Nq*Nw, d)
-            query_normalized = F.normalize(query, dim=-1)
 
             # (num_batch,  num_emb, num_proto) * (num_batch, num_query*num_proto, num_emb) -> (num_batch, num_query*num_proto, num_proto)
             # (Nb, Nq*Np, d) * (Nb, d, Np) -> (Nb, Nq*Nw, Np)
-            logits = torch.bmm(query_normalized, proto_normalized.permute([0,2,1])) / self.args.temperature
+            logits = torch.bmm(query, proto.permute([0,2,1])) / self.args.temperature
             logits = logits.view(-1, num_proto)
             # (Nb, Np, d), (Nb, d, Np) -> (Nb, Np, Np)
             # logits_support = torch.bmm(proto, proto.permute([0,2,1])) / self.args.temperature
@@ -119,7 +118,7 @@ class ProtoNet(nn.Module):
         basic_proto = F.normalize(basic_proto, dim=-1)
         # [batch_size, n_shot + n_memory, n_way, n_dim] x [batch_size, n_way, n_dim] -> # [batch_size, n_shot + n_memory, n_way]
         sim = (F.cosine_similarity(memory, basic_proto, dim=-1) + 1) / 2 # Normalized similarity
-        return torch.exp(alpha * sim)
+        return torch.exp(sim / alpha)
 
     def compute_prototypes(self, support, memory_bank = False, mode="train", debug_labels = None):
         if memory_bank:
