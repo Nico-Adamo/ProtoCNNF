@@ -69,7 +69,12 @@ class ProtoNet(nn.Module):
         # organize support/query data
 
         batch_size, n_shot, n_way, n_dim = support.shape
-        proto = self.compute_prototypes(support, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
+        if memory_bank:
+            proto = support.mean(dim=1)
+            for i in range(self.args.test_transduction_steps if mode == "test" or mode == "eval" else 0):
+                proto = self.compute_memory_prototypes(support, mode = mode, prototype_compare = proto, debug_labels = debug_labels)
+        else:
+            proto = support.mean(dim=1)
 
         num_batch = proto.shape[0]
         num_proto = proto.shape[1]
@@ -101,7 +106,7 @@ class ProtoNet(nn.Module):
 
         return logits
 
-    def get_similarity_scores(self, support, memory, alpha = 1):
+    def get_similarity_scores(self, support, memory, prototype_compare = None, alpha = 1):
         """
         Compute the average cosine similarity matrix between support and memory
         Inputs:
@@ -109,46 +114,45 @@ class ProtoNet(nn.Module):
             Memory: [batch_size, n_shot + n_memory, n_way, n_dim]
         Output: [batch_size, n_shot + n_memory, n_way]
         """
-        basic_proto = support.mean(dim=1) # [batch_size, n_way, n_dim]
-        basic_proto = F.normalize(basic_proto, dim=-1)
+        if prototype_compare is None:
+            basic_proto = support.mean(dim=1) # [batch_size, n_way, n_dim]
+        else:
+            basic_proto = prototype_compare
         # [batch_size, n_shot + n_memory, n_way, n_dim] x [batch_size, n_way, n_dim] -> # [batch_size, n_shot + n_memory, n_way]
         sim = (F.cosine_similarity(memory, basic_proto, dim=-1) + 1) / 2 # Normalized similarity
         return torch.exp(sim / alpha)
 
-    def compute_prototypes(self, support, memory_bank = False, mode="train", debug_labels = None):
-        if memory_bank:
-            memory = self.memory_bank.get_embedding_memory(mode=mode)
-            label_memory = self.memory_bank.get_debug_memory(mode=mode)
+    def compute_memory_prototypes(self, support, mode="train", prototype_compare = None, debug_labels = None):
+        memory = self.memory_bank.get_embedding_memory(mode=mode)
+        label_memory = self.memory_bank.get_debug_memory(mode=mode)
 
-            n_memory, _ = memory.shape
-            batch_size, n_shot, n_way, n_dim = support.shape
-            memory_x = memory.view(batch_size, n_memory, 1, n_dim).expand(-1, -1, n_way, -1)
-            shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
-            sim = self.get_similarity_scores(support, shot_memory) # [batch_size, n_shot + n_memory, n_way]
+        n_memory, _ = memory.shape
+        batch_size, n_shot, n_way, n_dim = support.shape
+        memory_x = memory.view(batch_size, n_memory, 1, n_dim).expand(-1, -1, n_way, -1)
+        shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
+        sim = self.get_similarity_scores(support, shot_memory, prototype_compare = prototype_compare) # [batch_size, n_shot + n_memory, n_way]
 
-            mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([self.args.memory_weight]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
-            sim = sim * mask_weight
+        mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([self.args.memory_weight]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
+        sim = sim * mask_weight
 
-            if self.training and self.args.use_training_labels:
-                mask_class = torch.ones_like(sim).cuda()
-                for way in range(n_way):
-                    for shot in range(sim.size(1)):
-                        memory_ind = shot - self.args.shot
-                        if label_memory[memory_ind] != debug_labels[way]:
-                            mask_class[0][shot][way] = 0
-
-                sim = sim * mask_class
-
-            topk, ind = torch.topk(sim, self.args.augment_size, dim=1)
-            topk_mask = torch.zeros_like(sim)
+        if self.training and self.args.use_training_labels:
+            mask_class = torch.ones_like(sim).cuda()
             for way in range(n_way):
-                for shot in range(self.args.augment_size):
-                    topk_mask[0][ind[0][shot][way]][way] = sim[0][ind[0][shot][way]][way]
+                for shot in range(sim.size(1)):
+                    memory_ind = shot - self.args.shot
+                    if label_memory[memory_ind] != debug_labels[way]:
+                        mask_class[0][shot][way] = 0
 
-            sim = sim * topk_mask
+            sim = sim * mask_class
 
-            sim = sim.unsqueeze(-1)
-            proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
-            return proto
-        else:
-            return support.mean(dim=1)
+        topk, ind = torch.topk(sim, self.args.augment_size, dim=1)
+        topk_mask = torch.zeros_like(sim)
+        for way in range(n_way):
+            for shot in range(self.args.augment_size):
+                topk_mask[0][ind[0][shot][way]][way] = sim[0][ind[0][shot][way]][way]
+
+        sim = sim * topk_mask
+
+        sim = sim.unsqueeze(-1)
+        proto = (sim * shot_memory).sum(dim=1) / sim.sum(dim=1) # [batch_size, n_way, n_dim]
+        return proto

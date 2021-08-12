@@ -13,7 +13,7 @@ from models.convnet import Convnet
 from models.resnet import ResNet
 from models.wrn import WideResNet
 from models.protonet import ProtoNet
-from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader
+from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader, cutout
 from tqdm import tqdm
 import torch.nn as nn
 
@@ -77,6 +77,8 @@ if __name__ == '__main__':
     parser.add_argument('--memory-weight', type=float, default = 0.2)
     parser.add_argument('--use-training-labels', action='store_true', default=False)
     parser.add_argument('--no-save', action='store_true', default=False)
+    parser.add_argument('--transductive-testing-steps', type=int, default = 10)
+    parser.add_argument('--query-augment', action='store_true', default=False)
 
     parser.add_argument('--cycles', type=int, default = 0)
 
@@ -90,13 +92,13 @@ if __name__ == '__main__':
 
     train_loader, val_loader, test_loader = get_dataloader(args)
 
-    global memory_bank_train
-    global memory_bank_val
-    global memory_bank_test
-    memory_bank_train = None
-    memory_bank_val = None
-    memory_bank_test = None
     model = ProtoNet(args).cuda()
+
+    query_transform = torchvision.transforms.Compose([
+        from_tensor(),
+        cutout(21, 0.5, False),
+        to_tensor(),
+    ])
 
     if args.restore_from != "":
         print("Restoring from {}".format(args.restore_from))
@@ -147,8 +149,9 @@ if __name__ == '__main__':
         with tqdm(train_loader, total=args.episodes_per_epoch) as pbar:
             for i, batch in enumerate(pbar, 1):
                 data, target = [_.cuda() for _ in batch]
-                support_label = target[:args.shot * args.way]
 
+                if args.query_augment:
+                    data[args.way * args.shot:] = query_transform(data[args.way * args.shot:])
                 # logits, labels = model(data, memory_bank = memory_bank)
                 # loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 
