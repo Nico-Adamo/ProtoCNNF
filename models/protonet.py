@@ -69,8 +69,9 @@ class ProtoNet(nn.Module):
             x = x.squeeze(0)
             instance_embs = self.encoder(x) # (n_batch, way * (shot+query), n_dim)
 
+            print(instance_embs)
             # Power transformation:
-            instance_embs = F.normalize(torch.sqrt(instance_embs + 1e-6), p=2, dim=-1)
+            instance_embs = F.normalize((instance_embs + 1e-6)^0.5, p=2, dim=-1)
 
             memory_bank = True if self.memory_bank.get_length(mode=mode) > 100 and memory_bank else False
 
