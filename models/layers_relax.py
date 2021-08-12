@@ -226,6 +226,20 @@ class leakyReLU(nn.Module):
     def reset(self):
         pass
 
+class ReLU(nn.Module):
+    def __init__(self, p = 0.1):
+        super().__init__()
+        self.relu = nn.ReLU(p)
+
+    def forward(self, x, step='forward'):
+        if 'forward' in step:
+            return self.relu(x)
+        else:
+            return self.relu(x)
+
+    def reset(self):
+        pass
+
 class resReLU(nn.Module):
     """
     AdaReLU with residual updates.
