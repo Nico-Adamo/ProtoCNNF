@@ -74,7 +74,7 @@ if __name__ == '__main__':
     parser.add_argument('--memory-size', type=int, default=256)
     parser.add_argument('--memory-start', type=int, default=1)
     parser.add_argument('--augment-size', type=int, default = 32)
-    parser.add_argument('--memory-weight', type=int, default = 0.2)
+    parser.add_argument('--memory-weight', type=float, default = 0.2)
     parser.add_argument('--use-training-labels', action='store_true', default=False)
     parser.add_argument('--no-save', action='store_true', default=False)
 
