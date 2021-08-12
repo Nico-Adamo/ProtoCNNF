@@ -51,10 +51,8 @@ class ProtoNet(nn.Module):
             if mode == "train":
                  self.memory_bank.add_image_memory(x[query_idx.flatten()].view(self.args.way * self.args.query, 3,84,84), mode = mode)
             if debug_labels is not None:
-                self.memory_bank.add_embedding_memory(debug_labels[self.args.way*self.args.shot:self.args.way * self.args.query], mode = "debug")
+                self.memory_bank.add_embedding_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + self.args.query)], mode = "debug")
 
-            print(self.memory_bank.embedding_memory['debug'].size(0))
-            print(self.memory_bank.embedding_memory['train'].size(0))
             logits = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
 
             # Update memory bank:
