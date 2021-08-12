@@ -165,5 +165,5 @@ def to_tensor():
 
 def from_tensor():
     def _from_tensor(image):
-        return np.asarray(image).astype(np.float32)
+        return np.asarray(image.cpu()).astype(np.float32)
     return _from_tensor
