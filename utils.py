@@ -158,7 +158,7 @@ def get_dataloader(args):
         train_loader = DataLoader(dataset=trainset,
                                     num_workers=num_workers,
                                     batch_sampler=train_sampler,
-                                    pin_memory=True, collate_fn = get_collate(args, batch_transform = query_transform))
+                                    pin_memory=True, collate_fn = get_collate(args, batch_transform = query_augment))
     else:
         train_loader = DataLoader(dataset=trainset,
                                     num_workers=num_workers,
