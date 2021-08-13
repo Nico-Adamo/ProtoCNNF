@@ -151,7 +151,7 @@ class ProtoNet(nn.Module):
             mask_class = torch.ones_like(sim).cuda()
             for way in range(n_way):
                 for shot in range(sim.size(1)):
-                    if shot => self.args.shot:
+                    if shot >= self.args.shot:
                         memory_ind = shot - self.args.shot
                         if label_memory[memory_ind] != debug_labels[way]:
                             mask_class[0][shot][way] = 0
