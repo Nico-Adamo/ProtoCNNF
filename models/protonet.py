@@ -24,19 +24,6 @@ class ProtoNet(nn.Module):
 
         self.memory_bank = MemoryBank(args.memory_size)
 
-        self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
-        nn.init.xavier_uniform_(self.global_w.weight)
-
-    def instance_scale(self, x):
-        out = x.view(x.size(0), 640, 1, 1)
-        out = self.layer1_rn(out)
-        out = out.view(out.size(0), -1)
-        out = self.fc1_rn(out)
-        out = self.fc2_rn(out)
-        out = torch.sigmoid(out)
-        out = torch.exp(self.alpha) * out + torch.exp(self.beta)
-        return out
-
     def split_instances(self, data, mode="train"):
         query = self.args.query if mode == "train" else self.args.test_query
         args = self.args
@@ -70,11 +57,7 @@ class ProtoNet(nn.Module):
             if debug_labels is not None:
                 self.memory_bank.add_debug_memory(debug_labels[:self.args.way*self.args.shot], mode = mode)
 
-            if self.training:
-                class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
-                return logits, class_embs
-            else:
-                return logits
+            return logits
 
     def _forward(self, support, query, memory_bank = False, mode = "train", debug_labels = None):
         emb_dim = support.size(-1)
