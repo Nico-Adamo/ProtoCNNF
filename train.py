@@ -84,6 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-save', action='store_true', default=False)
     parser.add_argument('--test-transduction-steps', type=int, default = 10)
     parser.add_argument('--test-augment-size', type=int, default = 32)
+    parser.add_argument('--transductive', action='store_true', default=False)
 
     parser.add_argument('--cycles', type=int, default = 0)
 
