@@ -153,17 +153,10 @@ def get_dataloader(args):
                                     num_episodes,
                                     args.way,
                                     args.shot + args.query)
-
-    if args.query_augment:
-        train_loader = DataLoader(dataset=trainset,
-                                    num_workers=num_workers,
-                                    batch_sampler=train_sampler,
-                                    pin_memory=True, collate_fn = get_collate(args, batch_transform = query_augment))
-    else:
-        train_loader = DataLoader(dataset=trainset,
-                                    num_workers=num_workers,
-                                    batch_sampler=train_sampler,
-                                    pin_memory=True)
+    train_loader = DataLoader(dataset=trainset,
+                                num_workers=num_workers,
+                                batch_sampler=train_sampler,
+                                pin_memory=True)
 
     valset = Dataset('val', args)
     val_sampler = CategoriesSampler(valset.label,
