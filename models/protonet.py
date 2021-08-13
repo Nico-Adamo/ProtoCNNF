@@ -151,16 +151,18 @@ class ProtoNet(nn.Module):
             mask_class = torch.ones_like(sim).cuda()
             for way in range(n_way):
                 for shot in range(sim.size(1)):
-                    memory_ind = shot - self.args.shot
-                    if label_memory[memory_ind] != debug_labels[way]:
-                        mask_class[0][shot][way] = 0
+                    if shot => self.args.shot:
+                        memory_ind = shot - self.args.shot
+                        if label_memory[memory_ind] != debug_labels[way]:
+                            mask_class[0][shot][way] = 0
 
             sim = sim * mask_class
 
-        topk, ind = torch.topk(sim, self.args.augment_size, dim=1)
+        augment_size = self.args.augment_size if mode =="train" else self.args.test_augment_size
+        topk, ind = torch.topk(sim, augment_size, dim=1)
         topk_mask = torch.zeros_like(sim)
         for way in range(n_way):
-            for shot in range(self.args.augment_size):
+            for shot in range(augment_size):
                 topk_mask[0][ind[0][shot][way]][way] = sim[0][ind[0][shot][way]][way]
 
         sim = sim * topk_mask
