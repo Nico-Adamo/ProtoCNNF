@@ -22,7 +22,9 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
-        self.memory_bank = MemoryBank(args.memory_size)
+        self.memory_bank = MemoryBank(args.memory_size, args.test_memory_size)
+        self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
+        nn.init.xavier_uniform_(self.global_w.weight)
 
     def split_instances(self, data, mode="train"):
         query = self.args.query if mode == "train" else self.args.test_query
@@ -57,7 +59,11 @@ class ProtoNet(nn.Module):
             if debug_labels is not None:
                 self.memory_bank.add_debug_memory(debug_labels[:self.args.way*self.args.shot], mode = mode)
 
-            return logits
+            if self.training:
+                class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
+                return logits, class_embs
+            else:
+                return logits
 
     def _forward(self, support, query, memory_bank = False, mode = "train", debug_labels = None):
         emb_dim = support.size(-1)
@@ -128,7 +134,8 @@ class ProtoNet(nn.Module):
         shot_memory = torch.cat([support, memory_x], dim=1) # [batch_size, n_shot + n_memory, n_way, n_dim]
         sim = self.get_similarity_scores(support, shot_memory, prototype_compare = prototype_compare) # [batch_size, n_shot + n_memory, n_way]
 
-        mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([self.args.memory_weight]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
+        memory_weight = self.args.memory_weight if mode == "train" else self.args.test_memory_weight
+        mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([memory_weight]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
         sim = sim * mask_weight
 
         if self.training and self.args.use_training_labels:

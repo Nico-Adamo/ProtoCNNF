@@ -77,9 +77,11 @@ if __name__ == '__main__':
     parser.add_argument('--ind-block', type=int, default=0)
     parser.add_argument('--use-cosine-similarity', action='store_true', default=False)
     parser.add_argument('--memory-size', type=int, default=256)
+    parser.add_argument('--test-memory-size', type=int, default=512)
     parser.add_argument('--memory-start', type=int, default=1)
     parser.add_argument('--augment-size', type=int, default = 32)
     parser.add_argument('--memory-weight', type=float, default = 0.2)
+    parser.add_argument('--test-memory-weight', type=float, default = 0.2)
     parser.add_argument('--use-training-labels', action='store_true', default=False)
     parser.add_argument('--no-save', action='store_true', default=False)
     parser.add_argument('--test-transduction-steps', type=int, default = 10)
@@ -150,11 +152,11 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, target = [_.cuda() for _ in batch]
 
-                # logits, labels = model(data, memory_bank = memory_bank)
-                # loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
+                logits, labels = model(data, memory_bank = memory_bank)
+                loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 
-                logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = target)
-                loss = F.cross_entropy(logits, label)
+                # logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = target)
+                # loss = F.cross_entropy(logits, label)
 
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))
