@@ -49,15 +49,14 @@ class ProtoNet(nn.Module):
 
             logits = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
 
-            if 1 == 1:
-                # Update memory bank:
-                self.memory_bank.add_embedding_memory(support.view(self.args.way * self.args.shot, 640).detach(), mode = mode)
-                self.memory_bank.add_embedding_memory(query.view(self.args.way * n_query, 640).detach(), mode = mode)
-                if debug_labels is not None:
-                    self.memory_bank.add_debug_memory(debug_labels[:self.args.way*self.args.shot], mode = mode)
-                if debug_labels is not None:
-                    self.memory_bank.add_debug_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + n_query)], mode = mode)
-
+            # Update memory bank:
+            self.memory_bank.add_embedding_memory(query.view(self.args.way * n_query, 640).detach(), mode = mode)
+            self.memory_bank.add_embedding_memory(support.view(self.args.way * self.args.shot, 640).detach(), mode = mode)
+            if debug_labels is not None:
+                self.memory_bank.add_debug_memory(debug_labels[:self.args.way*self.args.shot], mode = mode)
+            if debug_labels is not None:
+                self.memory_bank.add_debug_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + n_query)], mode = mode)
+            if self.training:
                 class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
                 return logits, class_embs
             else:
