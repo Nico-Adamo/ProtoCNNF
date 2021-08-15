@@ -13,4 +13,5 @@ python3 train.py --max-epoch 200 \
                  --test-memory-weight 0.5 \
                  --test-query 50 \
                  --test-augment-size 50 \
+                 --transductive \
                  --test-transduction-steps 1
