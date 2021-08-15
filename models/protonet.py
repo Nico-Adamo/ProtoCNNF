@@ -47,19 +47,17 @@ class ProtoNet(nn.Module):
             support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))
             query = instance_embs[query_idx.flatten()].view(*(query_idx.shape   + (-1,)))
 
-            self.memory_bank.add_embedding_memory(query.view(self.args.way * n_query, 640).detach(), mode = mode)
-            if debug_labels is not None:
-                self.memory_bank.add_debug_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + n_query)], mode = mode)
-
             logits = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
 
-            # Update memory bank:
-            self.memory_bank.add_embedding_memory(support.view(self.args.way * self.args.shot, 640).detach(), mode = mode)
-
-            if debug_labels is not None:
-                self.memory_bank.add_debug_memory(debug_labels[:self.args.way*self.args.shot], mode = mode)
-
             if self.training:
+                # Update memory bank:
+                self.memory_bank.add_embedding_memory(support.view(self.args.way * self.args.shot, 640).detach(), mode = mode)
+                self.memory_bank.add_embedding_memory(query.view(self.args.way * n_query, 640).detach(), mode = mode)
+                if debug_labels is not None:
+                    self.memory_bank.add_debug_memory(debug_labels[:self.args.way*self.args.shot], mode = mode)
+                if debug_labels is not None:
+                    self.memory_bank.add_debug_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + n_query)], mode = mode)
+
                 class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
                 return logits, class_embs
             else:
@@ -74,7 +72,7 @@ class ProtoNet(nn.Module):
             proto = support.mean(dim=1)
             if self.args.transductive or mode == "train":
                 for i in range(self.args.test_transduction_steps if mode == "eval" else 1):
-                    proto = self.compute_memory_prototypes(support, mode = mode, prototype_compare = proto, debug_labels = debug_labels)
+                    proto = self.compute_memory_prototypes(support, query, mode = mode, prototype_compare = proto, debug_labels = debug_labels)
         else:
             proto = support.mean(dim=1)
 
@@ -124,9 +122,10 @@ class ProtoNet(nn.Module):
         sim = (F.cosine_similarity(memory, basic_proto, dim=-1) + 1) / 2 # Normalized similarity
         return torch.exp(sim / alpha)
 
-    def compute_memory_prototypes(self, support, mode="train", prototype_compare = None, debug_labels = None):
-        memory = self.memory_bank.get_embedding_memory(mode=mode)
-        label_memory = self.memory_bank.get_debug_memory(mode=mode)
+    def compute_memory_prototypes(self, support, query, mode="train", prototype_compare = None, debug_labels = None):
+        memory = self.memory_bank.get_embedding_memory(mode="train")
+        memory = torch.cat([query.view(-1, 640), memory], dim=0)
+        label_memory = self.memory_bank.get_debug_memory(mode="train")
 
         n_memory, _ = memory.shape
         batch_size, n_shot, n_way, n_dim = support.shape

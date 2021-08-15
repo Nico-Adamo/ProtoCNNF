@@ -77,7 +77,6 @@ if __name__ == '__main__':
     parser.add_argument('--ind-block', type=int, default=0)
     parser.add_argument('--use-cosine-similarity', action='store_true', default=False)
     parser.add_argument('--memory-size', type=int, default=256)
-    parser.add_argument('--test-memory-size', type=int, default=512)
     parser.add_argument('--memory-start', type=int, default=1)
     parser.add_argument('--augment-size', type=int, default = 32)
     parser.add_argument('--memory-weight', type=float, default = 0.2)

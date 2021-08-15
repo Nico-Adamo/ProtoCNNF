@@ -10,7 +10,6 @@ python3 train.py --max-epoch 200 \
                  --augment-size 16 \
                  --memory-weight 0.5 \
                  --memory-size 256 \
-                 --test-memory-size 256 \
                  --test-memory-weight 0.5 \
                  --test-query 50 \
                  --test-augment-size 50 \
