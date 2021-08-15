@@ -22,7 +22,7 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
-        self.memory_bank = MemoryBank(args.memory_size, args.test_memory_size)
+        self.memory_bank = MemoryBank(args.memory_size)
         self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
         nn.init.xavier_uniform_(self.global_w.weight)
 
@@ -41,7 +41,7 @@ class ProtoNet(nn.Module):
             x = x.squeeze(0)
             instance_embs = self.encoder(x) # (n_batch, way * (shot+query), n_dim)
 
-            memory_bank = True if self.memory_bank.get_length(mode=mode) > 100 and memory_bank else False
+            memory_bank = True if self.memory_bank.get_length(mode="train") > 100 and memory_bank else False
 
             support_idx, query_idx = self.split_instances(x, mode=mode)
             support = instance_embs[support_idx.flatten()].view(*(support_idx.shape + (-1,)))

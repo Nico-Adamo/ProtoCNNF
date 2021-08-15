@@ -7,10 +7,9 @@ from torchvision.utils import make_grid, save_image
 
 
 class MemoryBank(nn.Module):
-    def __init__(self, size, test_size):
+    def __init__(self, size):
         super().__init__()
         self.size = size
-        self.test_size = test_size
         # Possible self.bias to add to cosine matrix?
         self.embedding_memory = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda()}
         self.image_memory = {"train": torch.tensor([]).cuda(), "val": torch.tensor([]).cuda(), "eval": torch.tensor([]).cuda()}
@@ -22,8 +21,7 @@ class MemoryBank(nn.Module):
         memory = self.embedding_memory[mode]
         # Add memory to the end of the memory bank
         # data: [batch_size, emb_size]
-        size = self.size if mode == "train" else self.test_size
-        if memory.size(0) < size:
+        if memory.size(0) < self.size:
             self.embedding_memory[mode] = torch.cat((memory, data))
         else:
             self.embedding_memory[mode] = torch.cat((memory[data.shape[0]:], data))
