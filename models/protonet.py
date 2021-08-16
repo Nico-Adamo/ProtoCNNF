@@ -126,9 +126,9 @@ class ProtoNet(nn.Module):
     def compute_memory_prototypes(self, support, query, mode="train", prototype_compare = None, debug_labels = None):
         if mode == "train":
             memory = self.memory_bank.get_embedding_memory(mode="train")
-            memory = torch.cat([query.view(-1, 640), memory], dim=0)
+            memory = torch.cat([query.view(-1, 640).detach(), memory], dim=0)
         else:
-            memory = query.view(-1, 640)
+            memory = query.view(-1, 640).detach()
         label_memory = self.memory_bank.get_debug_memory(mode="train")
 
         n_memory, _ = memory.shape
