@@ -48,12 +48,12 @@ class ProtoNet(nn.Module):
             query = instance_embs[query_idx.flatten()].view(*(query_idx.shape   + (-1,)))
 
             # Update memory bank:
-            self.memory_bank.add_embedding_memory(query.view(self.args.way * n_query, 640).detach(), mode = mode)
-            if debug_labels is not None:
-                self.memory_bank.add_debug_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + n_query)], mode = mode)
 
             logits = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
 
+            self.memory_bank.add_embedding_memory(query.view(self.args.way * n_query, 640).detach(), mode = mode)
+            if debug_labels is not None:
+                self.memory_bank.add_debug_memory(debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + n_query)], mode = mode)
             self.memory_bank.add_embedding_memory(support.view(self.args.way * self.args.shot, 640).detach(), mode = mode)
             if debug_labels is not None:
                 self.memory_bank.add_debug_memory(debug_labels[:self.args.way*self.args.shot], mode = mode)
@@ -125,7 +125,7 @@ class ProtoNet(nn.Module):
 
     def compute_memory_prototypes(self, support, query, mode="train", prototype_compare = None, debug_labels = None):
         memory = self.memory_bank.get_embedding_memory(mode=mode)
-        # memory = torch.cat([query.view(-1, 640).detach(), memory], dim=0)
+        memory = torch.cat([query.view(-1, 640).detach(), memory], dim=0)
         label_memory = self.memory_bank.get_debug_memory(mode="train")
 
         n_memory, _ = memory.shape
