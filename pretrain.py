@@ -14,6 +14,7 @@ from models.wrn import WideResNet
 from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric
 from tqdm import tqdm
 from models.classifier import Classifier
+from models.wrn_mixup import wrn28_10
 
 if __name__ == '__main__':
     torch.manual_seed(0)
@@ -35,7 +36,6 @@ if __name__ == '__main__':
     parser.add_argument('--ngpu', type=int, default = 1)
     parser.add_argument('--wandb', action='store_true')
     parser.add_argument('--inter-cycle-loss', action='store_true', default=False)
-    parser.add_argument('--bias-shift', action='store_true', default=False)
 
     args = parser.parse_args()
     pprint(vars(args))
@@ -63,7 +63,8 @@ if __name__ == '__main__':
     if args.model == "Conv64":
         model = Classifier(Convnet(), args).cuda()
     elif args.model == "WRN28":
-        model = Classifier(WideResNet(ind_block = args.ind_block, ind_layer = args.ind_layer, cycles = args.cycles), args).cuda()
+        # model = Classifier(WideResNet(ind_block = args.ind_block, ind_layer = args.ind_layer, cycles = args.cycles), args).cuda()
+        model = Classifier(wrn28_10(), args).cuda()
     else:
         model = Classifier(ResNet(ind_block = args.ind_block, cycles = args.cycles), args).cuda()
 
