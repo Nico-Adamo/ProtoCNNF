@@ -129,7 +129,7 @@ class ProtoNet(nn.Module):
             memory = torch.cat([query.view(-1, 640), memory], dim=0)
             if self.args.use_training_labels:
                 label_memory = self.memory_bank.get_debug_memory(mode="train")
-                label_memory = torch.cat([debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + n_query)], label_memory], dim=0)
+                label_memory = torch.cat([debug_labels[self.args.way*self.args.shot:self.args.way * (self.args.shot + self.args.query)], label_memory], dim=0)
         else:
             memory = query.view(-1, 640)
 
