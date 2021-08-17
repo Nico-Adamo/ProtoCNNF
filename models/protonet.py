@@ -20,7 +20,7 @@ class ProtoNet(nn.Module):
             # from models.wrn import WideResNet
             # self.encoder = WideResNet(ind_block = args.ind_block, cycles=args.cycles, ind_layer = args.ind_layer)
             from models.wrn_mixup import wrn28_10
-            self.encoder = wrn28_10(num_classes = 64)
+            self.encoder = wrn28_10()
         else:
             raise ValueError('')
 
