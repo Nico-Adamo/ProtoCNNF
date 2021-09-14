@@ -81,8 +81,8 @@ if __name__ == '__main__':
         preprocess,
         ])
 
-        traindir = osp.join('/workspace/dataset', 'train')
-        valdir = osp.join('/workspace/dataset', 'val')
+        traindir = osp.join('/cnnfworkspace/dataset', 'train')
+        valdir = osp.join('/cnnfworkspace/dataset', 'val')
         train_data = datasets.ImageFolder(traindir, train_transform)
         test_data = datasets.ImageFolder(valdir, test_transform)
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size,
                                             num_workers=args.workers, shuffle=(train_sampler is None),
                                             pin_memory=True, sampler=train_sampler)
-        test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size,
+        val_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size,
                                             num_workers=args.workers, shuffle=False,
                                             pin_memory=True, sampler=val_sampler)
 
