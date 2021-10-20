@@ -14,7 +14,7 @@ from models.convnet import Convnet
 from models.resnet import ResNet
 from models.wrn import WideResNet
 from models.protonet import ProtoNet
-from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader
+from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader, hse_loss
 from tqdm import tqdm
 import torch.nn as nn
 
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-save', action='store_true', default=False)
     parser.add_argument('--test-transduction-steps', type=int, default = 1)
     parser.add_argument('--test-augment-size', type=int, default = 32)
-    parser.add_argument('--transductive', action='store_true', default=True)
+    parser.add_argument('--transductive', action='store_true', default=False)
 
     parser.add_argument('--cycles', type=int, default = 0)
 
@@ -151,8 +151,8 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, target = [_.cuda() for _ in batch]
 
-                logits, labels = model(data, memory_bank = memory_bank, debug_labels = target)
-                loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
+                logits, labels, prototypes = model(data, memory_bank = memory_bank, debug_labels = target)
+                loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target) + 0.5 * hse_loss(prototypes)
 
                 # logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = target)
                 # loss = F.cross_entropy(logits, label)

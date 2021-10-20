@@ -170,3 +170,13 @@ def get_dataloader(args):
 
     return train_loader, val_loader, test_loader
 
+def hse_loss(prototypes):
+    # prototypes = (num_batch, num_proto, num_emb)
+    num_proto = prototypes.shape[1]
+    loss = 0
+    for i in range(num_proto):
+        for j in range(num_proto):
+            if i != j:
+                loss += torch.log(torch.pow(torch.cdist(prototypes[0][i], prototypes[0][j]),-1))
+
+    return loss

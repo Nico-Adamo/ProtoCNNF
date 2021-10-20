@@ -51,7 +51,7 @@ class ProtoNet(nn.Module):
 
             # Update memory bank:
 
-            logits = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
+            logits, prototypes = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
 
             if self.training:
                 self.memory_bank.add_embedding_memory(query.view(self.args.way * n_query, 640).detach(), mode = mode)
@@ -62,7 +62,7 @@ class ProtoNet(nn.Module):
                     self.memory_bank.add_debug_memory(debug_labels[:self.args.way*self.args.shot], mode = mode)
 
                 class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
-                return logits, class_embs
+                return logits, class_embs, prototypes
             else:
                 return logits
 
@@ -107,7 +107,7 @@ class ProtoNet(nn.Module):
             # logits_support = torch.bmm(proto, proto.permute([0,2,1])) / self.args.temperature
             # logits_support = logits.view(-1, num_proto)
 
-        return logits
+        return logits, proto
 
     def get_similarity_scores(self, support, memory, prototype_compare = None, alpha = 1):
         """
