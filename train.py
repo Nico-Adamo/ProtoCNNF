@@ -152,7 +152,7 @@ if __name__ == '__main__':
                 data, target = [_.cuda() for _ in batch]
 
                 logits, labels, prototypes = model(data, memory_bank = memory_bank, debug_labels = target)
-                loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target) + 0.5 * hse_loss(prototypes)
+                loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target) + 0.1 * hse_loss(prototypes)
 
                 # logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = target)
                 # loss = F.cross_entropy(logits, label)
