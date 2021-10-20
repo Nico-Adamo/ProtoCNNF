@@ -14,4 +14,5 @@ python3 train.py --max-epoch 200 \
                  --model "ResNet12" \
                  --project "CNNF-Prototype-5shot" \
                  --use-cosine-similarity \
-                 --memory-start 1000
+                 --memory-start 1000 \
+                 --test-query 15
