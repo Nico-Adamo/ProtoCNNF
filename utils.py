@@ -4,6 +4,7 @@ import time
 import pprint
 import numpy as np
 import torchvision
+import torch.nn.functional as F
 
 import torch
 from samplers import CategoriesSampler
