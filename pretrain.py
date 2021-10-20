@@ -5,6 +5,8 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import wandb
+from torchvision import datasets
+from torchvision import transforms
 
 from mini_imagenet import MiniImageNet
 from samplers import CategoriesSampler
@@ -36,6 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('--ngpu', type=int, default = 1)
     parser.add_argument('--wandb', action='store_true')
     parser.add_argument('--inter-cycle-loss', action='store_true', default=False)
+    parser.add_argument('--dataset', type=str, choices=['MiniImageNet', 'ImageNet900'], default="MiniImageNet")
 
     args = parser.parse_args()
     pprint(vars(args))
@@ -50,15 +53,50 @@ if __name__ == '__main__':
     else:
         wandb.init(project=args.project, config=args, mode="disabled")
 
-    trainset = MiniImageNet('train', args, augment=True)
-    train_loader = DataLoader(dataset=trainset, batch_size = 16, shuffle=True,
-                              num_workers=8, pin_memory=False)
+    if args.dataset == "MiniImageNet":
+        trainset = MiniImageNet('train', args, augment=True)
+        train_loader = DataLoader(dataset=trainset, batch_size = 16, shuffle=True,
+                                num_workers=8, pin_memory=False)
 
-    valset = MiniImageNet('val', args)
-    val_sampler = CategoriesSampler(valset.label, 200,
-                                    valset.num_class, 1 + args.query)
-    val_loader = DataLoader(dataset=valset, batch_sampler=val_sampler,
-                            num_workers=8, pin_memory=False)
+        valset = MiniImageNet('val', args)
+        val_sampler = CategoriesSampler(valset.label, 200,
+                                        valset.num_class, 1 + args.query)
+        val_loader = DataLoader(dataset=valset, batch_sampler=val_sampler,
+                                num_workers=8, pin_memory=False)
+    elif args.dataset == "ImageNet900":
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
+        train_transform = transforms.Compose(
+        [transforms.Resize(92),
+        transforms.RandomResizedCrop(84),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)])        
+        preprocess = transforms.Compose(
+        [transforms.ToTensor(),
+        transforms.Normalize(mean, std)])
+        test_transform = transforms.Compose([
+        transforms.Resize(92),
+        transforms.CenterCrop(84),
+        preprocess,
+        ])
+
+        traindir = osp.join('/cnnfworkspace/dataset', 'train')
+        valdir = osp.join('/cnnfworkspace/dataset', 'val')
+        train_data = datasets.ImageFolder(traindir, train_transform)
+        test_data = datasets.ImageFolder(valdir, test_transform)
+
+        train_sampler = None
+        val_sampler = None
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)   
+        val_sampler = torch.utils.data.distributed.DistributedSampler(test_data)
+        
+        train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size,
+                                            num_workers=args.workers, shuffle=(train_sampler is None),
+                                            pin_memory=True, sampler=train_sampler)
+        val_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size,
+                                            num_workers=args.workers, shuffle=False,
+                                            pin_memory=True, sampler=val_sampler)
 
     if args.model == "Conv64":
         model = Classifier(Convnet(), args).cuda()
