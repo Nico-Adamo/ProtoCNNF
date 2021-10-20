@@ -178,6 +178,6 @@ def hse_loss(prototypes):
     for i in range(num_proto):
         for j in range(num_proto):
             if i != j:
-                loss += torch.log((F.normalize(prototypes[0][i]) - F.normalize(prototypes[0][j])).pow(2).sum().sqrt().pow(-1))
+                loss += torch.log((F.normalize(prototypes[0][i], dim=0) - F.normalize(prototypes[0][j]), dim=0).pow(2).sum().sqrt().pow(-1))
 
     return loss
