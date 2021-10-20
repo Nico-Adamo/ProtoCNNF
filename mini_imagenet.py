@@ -7,7 +7,7 @@ from torchvision import transforms
 
 
 ROOT_PATH = './materials/'
-IMAGE_PATH = '/workspace/miniimagenet/'
+IMAGE_PATH = './miniimagenet/'
 
 class MiniImageNet(Dataset):
 
