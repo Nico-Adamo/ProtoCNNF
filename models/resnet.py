@@ -25,7 +25,7 @@ def mean(tensor):
     print("Mean: " + str(tensor.view(tensor.size(0),-1).mean()))
 
 class BasicBlock(nn.Module):
-    """Basic ResNet block."""
+    """Basic ResNet block with feedback."""
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, drop_rate=0.0, drop_block=False, block_size=1, res_param = 0.1, cycles = 0):

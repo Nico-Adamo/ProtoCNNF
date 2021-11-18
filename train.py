@@ -151,8 +151,8 @@ if __name__ == '__main__':
             for i, batch in enumerate(pbar, 1):
                 data, target = [_.cuda() for _ in batch]
 
-                logits, labels, prototypes = model(data, memory_bank = memory_bank, debug_labels = target)
-                loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target) + 0.1 * hse_loss(prototypes)
+                logits, labels = model(data, memory_bank = memory_bank, debug_labels = target)
+                loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 
                 # logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = target)
                 # loss = F.cross_entropy(logits, label)
@@ -167,8 +167,6 @@ if __name__ == '__main__':
                 loss.backward()
                 optimizer.step()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
-
-
 
                 proto = None; logits = None; loss = None
 

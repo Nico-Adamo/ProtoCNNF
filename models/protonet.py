@@ -16,6 +16,9 @@ class ProtoNet(nn.Module):
         elif args.model == 'ResNet12':
             from models.resnet import ResNet
             self.encoder = ResNet(ind_block = args.ind_block, cycles=args.cycles)
+        elif args.model == 'DeepRes':
+            from models.resnet import ResNet, DeepBlock
+            self.encoder = ResNet(block=DeepBlock, cycles = 0)
         elif args.model == 'WRN28':
             # from models.wrn import WideResNet
             # self.encoder = WideResNet(ind_block = args.ind_block, cycles=args.cycles, ind_layer = args.ind_layer)
@@ -24,9 +27,10 @@ class ProtoNet(nn.Module):
         else:
             raise ValueError('')
 
+
         self.memory_bank = MemoryBank(args.memory_size)
         self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
-        nn.init.xavier_uniform_(self.global_w.weight)
+        nn.init.xavier_uni form_(self.global_w.weight)
 
     def split_instances(self, data, mode="train"):
         query = self.args.query if mode == "train" else self.args.test_query
@@ -51,7 +55,7 @@ class ProtoNet(nn.Module):
 
             # Update memory bank:
 
-            logits, prototypes = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
+            logits = self._forward(support, query, memory_bank = memory_bank, mode = mode, debug_labels = debug_labels)
 
             if self.training:
                 self.memory_bank.add_embedding_memory(query.view(self.args.way * n_query, 640).detach(), mode = mode)
@@ -61,8 +65,9 @@ class ProtoNet(nn.Module):
                 if debug_labels is not None:
                     self.memory_bank.add_debug_memory(debug_labels[:self.args.way*self.args.shot], mode = mode)
 
+                # Linear classification - supervised embeddings
                 class_embs = self.global_w(instance_embs.unsqueeze(-1).unsqueeze(-1)).view(-1, 64)
-                return logits, class_embs, prototypes
+                return logits, class_embs
             else:
                 return logits
 
@@ -107,7 +112,7 @@ class ProtoNet(nn.Module):
             # logits_support = torch.bmm(proto, proto.permute([0,2,1])) / self.args.temperature
             # logits_support = logits.view(-1, num_proto)
 
-        return logits, proto
+        return logits
 
     def get_similarity_scores(self, support, memory, prototype_compare = None, alpha = 1):
         """
@@ -146,20 +151,11 @@ class ProtoNet(nn.Module):
         mask_weight = torch.cat([torch.tensor([1]).expand(batch_size, n_shot, n_way), torch.tensor([memory_weight]).expand(batch_size, n_memory, n_way)], dim=1).cuda()
         sim = sim * mask_weight
 
-        if self.training and self.args.use_training_labels:
-            mask_class = torch.ones_like(sim).cuda()
-            for way in range(n_way):
-                for shot in range(sim.size(1)):
-                    if shot >= self.args.shot:
-                        memory_ind = shot - self.args.shot
-                        if label_memory[memory_ind] != debug_labels[way]:
-                            mask_class[0][shot][way] = 0
-
-            sim = sim * mask_class
-
         augment_size = self.args.augment_size if mode =="train" else self.args.test_augment_size
         topk, ind = torch.topk(sim, augment_size, dim=1)
         topk_mask = torch.zeros_like(sim)
+
+        # Backprop-able top-k via a mask
         for way in range(n_way):
             for shot in range(augment_size):
                 topk_mask[0][ind[0][shot][way]][way] = sim[0][ind[0][shot][way]][way]
