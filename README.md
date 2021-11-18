@@ -1,42 +1,12 @@
-# Prototypical Network
+# ProtoCNNF
 
-A re-implementation of [Prototypical Network](https://arxiv.org/abs/1703.05175).
+An implementation of [Prototypical Network](https://arxiv.org/abs/1703.05175) using generative feedback and memory replay on a variety of backbone models.
 
-With ConvNet-4 backbone on miniImageNet.
+### Usage
 
-***For deep backbones (ResNet), see [Meta-Baseline](https://github.com/cyvius96/few-shot-meta-baseline).***
+The experiments folder contains template experiments - each one consists of pretraining using `pretrain.py` and training use `train.py`. 
 
-### Results
+Miniimagenet images are expected to be in miniimagenet/images, and train/test splits in materials/
 
-1-shot: 49.1% (49.4% in the paper)
+Note that the experiments generally have sane defaults while the default args may not.
 
-5-shot: 66.9% (68.2% in the paper)
-
-## Environment
-
-* python 3
-* pytorch 0.4.0
-
-## Instructions
-
-1. Download the images: https://drive.google.com/open?id=0B3Irx3uQNoBMQ1FlNXJsZUdYWEE
-
-2. Make a folder `materials/images` and put those images into it.
-
-`--gpu` to specify device for program.
-
-### 1-shot Train
-
-`python train.py`
-
-### 1-shot Test
-
-`python test.py` 
-
-### 5-shot Train
-
-`python train.py --shot 5 --train-way 20 --save-path ./save/proto-5`
-
-### 5-shot Test
-
-`python test.py --load ./save/proto-5/max-acc.pth --shot 5`
