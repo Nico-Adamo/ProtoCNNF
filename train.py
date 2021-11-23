@@ -14,7 +14,7 @@ from models.convnet import Convnet
 from models.resnet import ResNet
 from models.wrn import WideResNet
 from models.protonet import ProtoNet
-from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader, hse_loss
+from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_dataloader, hse_loss, imerge, get_imagenet900_dataloader
 from tqdm import tqdm
 import torch.nn as nn
 
@@ -86,8 +86,9 @@ if __name__ == '__main__':
     parser.add_argument('--test-transduction-steps', type=int, default = 1)
     parser.add_argument('--test-augment-size', type=int, default = 32)
     parser.add_argument('--transductive', action='store_true', default=False)
-
+    parser.add_argument('--common-loss', action='store_true', default=False)
     parser.add_argument('--cycles', type=int, default = 0)
+    parser.add_argument('--dataset', type=str, choices=['MiniImageNet', 'ImageNet900', 'ImageNet-LT'], default="MiniImageNet")
 
     args = parser.parse_args()
     pprint(vars(args))
@@ -98,6 +99,9 @@ if __name__ == '__main__':
     wandb.init(project=args.project, config=args)
 
     train_loader, val_loader, test_loader = get_dataloader(args)
+    if args.common_loss:
+        if args.dataset == "ImageNet900":
+            common_loader_train, _ = get_imagenet900_dataloader()
 
     model = ProtoNet(args).cuda()
 
@@ -147,15 +151,19 @@ if __name__ == '__main__':
 
         tl = Averager()
         ta = Averager()
-        with tqdm(train_loader, total=args.episodes_per_epoch) as pbar:
+
+        loader = imerge(train_loader, common_loader_train) if args.common_loss else train_loader
+        with tqdm(loader, total=args.episodes_per_epoch * (2 if args.common_loss else 1)) as pbar:
             for i, batch in enumerate(pbar, 1):
                 data, target = [_.cuda() for _ in batch]
 
                 logits, labels = model(data, memory_bank = memory_bank, debug_labels = target)
                 loss = 0.5 * F.cross_entropy(logits, label) + 1 * F.cross_entropy(labels, target)
 
-                # logits = model(data, memory_bank = memory_bank, mode = "train", debug_labels = target)
-                # loss = F.cross_entropy(logits, label)
+                # Loader yields alternatively common class / few shot:
+                if args.common_loss:
+                    new_data, new_target = [_.cuda() for _ in next(pbar)]
+                    loss += 0.25 * F.cross_entropy(model(new_data, get_feature=True), new_target)
 
                 acc = count_acc(logits, label)
                 pbar.set_postfix(accuracy='{0:.4f}'.format(100*acc),loss='{0:.4f}'.format(loss.item()))

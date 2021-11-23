@@ -1,6 +1,7 @@
 from mini_imagenet import MiniImageNet
 from models.protonet import ProtoNet
 import torch
+import numpy as np
 from argparse import Namespace
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
@@ -37,6 +38,10 @@ if __name__ == '__main__':
     # train_loader, val_loader, test_loader = get_dataloader(args)
 
     model = ProtoNet(args).cuda()
+
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print(params)
 
     # if restore_from != "":
     #     print("Restoring from {}".format(restore_from))

@@ -5,6 +5,7 @@ import pprint
 import numpy as np
 import torchvision
 import torch.nn.functional as F
+import itertools
 
 import torch
 from samplers import CategoriesSampler
@@ -47,6 +48,10 @@ def count_acc(logits, label):
 def dot_metric(a, b):
     return torch.mm(a, b.t())
 
+def imerge(a, b):
+    for i, j in itertools.izip(a,b):
+        yield i
+        yield j
 
 def euclidean_metric(a, b):
     n = a.shape[0]
@@ -181,3 +186,39 @@ def hse_loss(prototypes):
                 loss += torch.log((F.normalize(prototypes[0][i], dim=0) - F.normalize(prototypes[0][j], dim=0)).pow(2).sum().sqrt().pow(-1))
 
     return loss
+
+def get_imagenet900_dataloader():
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
+        train_transform = transforms.Compose(
+        [transforms.Resize(92),
+        transforms.RandomResizedCrop(84),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)])
+        preprocess = transforms.Compose(
+        [transforms.ToTensor(),
+        transforms.Normalize(mean, std)])
+        test_transform = transforms.Compose([
+        transforms.Resize(92),
+        transforms.CenterCrop(84),
+        preprocess,
+        ])
+
+        traindir = osp.join('/cnnfworkspace/imagenet/train/', 'train')
+        valdir = osp.join('/cnnfworkspace/imagenet/train/', 'val')
+        train_data = datasets.ImageFolder(traindir, train_transform)
+        test_data = datasets.ImageFolder(valdir, test_transform)
+
+        train_sampler = None
+        val_sampler = None
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
+        val_sampler = torch.utils.data.distributed.DistributedSampler(test_data)
+
+        train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size,
+                                            num_workers=args.workers, shuffle=(train_sampler is None),
+                                            pin_memory=True, sampler=train_sampler)
+        val_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size,
+                                            num_workers=args.workers, shuffle=False,
+                                            pin_memory=True, sampler=val_sampler)
+        return train_loader, val_loader

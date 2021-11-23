@@ -30,7 +30,11 @@ class ProtoNet(nn.Module):
 
         self.memory_bank = MemoryBank(args.memory_size)
         self.global_w = nn.Conv2d(in_channels=640, out_channels=64, kernel_size=1, stride=1)
-        nn.init.xavier_uni form_(self.global_w.weight)
+        nn.init.xavier_uniform_(self.global_w.weight)
+
+        if args.common_loss:
+            self.linear = nn.Linear(in_features = 640, out_features = 1000)
+            nn.init.xavier_uniform_(self.linear.weight)
 
     def split_instances(self, data, mode="train"):
         query = self.args.query if mode == "train" else self.args.test_query
@@ -40,7 +44,7 @@ class ProtoNet(nn.Module):
 
     def forward(self, x, memory_bank = False, get_feature = False, mode = "train", debug_labels = None):
         if get_feature:
-            return self.encoder(x)
+            return self.linear(self.encoder(x))
         else:
             # feature extraction
             n_query = self.args.query if mode == "train" else self.args.test_query
