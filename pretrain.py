@@ -13,7 +13,7 @@ from samplers import CategoriesSampler
 from models.convnet import Convnet
 from models.resnet import ResNet
 from models.wrn import WideResNet
-from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric
+from utils import pprint, set_gpu, ensure_path, Averager, Timer, count_acc, euclidean_metric, get_imagenet900_dataloader
 from tqdm import tqdm
 from models.classifier import Classifier
 from models.wrn_mixup import wrn28_10
@@ -64,40 +64,7 @@ if __name__ == '__main__':
         val_loader = DataLoader(dataset=valset, batch_sampler=val_sampler,
                                 num_workers=8, pin_memory=False)
     elif args.dataset == "ImageNet900":
-        mean = [0.485, 0.456, 0.406]
-        std = [0.229, 0.224, 0.225]
-        train_transform = transforms.Compose(
-        [transforms.Resize(92),
-        transforms.RandomResizedCrop(84),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean, std)])        
-        preprocess = transforms.Compose(
-        [transforms.ToTensor(),
-        transforms.Normalize(mean, std)])
-        test_transform = transforms.Compose([
-        transforms.Resize(92),
-        transforms.CenterCrop(84),
-        preprocess,
-        ])
-
-        traindir = osp.join('/cnnfworkspace/dataset', 'train')
-        valdir = osp.join('/cnnfworkspace/dataset', 'val')
-        train_data = datasets.ImageFolder(traindir, train_transform)
-        test_data = datasets.ImageFolder(valdir, test_transform)
-
-        train_sampler = None
-        val_sampler = None
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)   
-        val_sampler = torch.utils.data.distributed.DistributedSampler(test_data)
-        
-        train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size,
-                                            num_workers=args.workers, shuffle=(train_sampler is None),
-                                            pin_memory=True, sampler=train_sampler)
-        val_loader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size,
-                                            num_workers=args.workers, shuffle=False,
-                                            pin_memory=True, sampler=val_sampler)
-
+        train_loader, val_loader = get_imagenet900_dataloader()
     if args.model == "Conv64":
         model = Classifier(Convnet(), args).cuda()
     elif args.model == "WRN28":
